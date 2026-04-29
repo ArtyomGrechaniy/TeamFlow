@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% block title %}Мои команды{% endblock %}
+{% block content %}
+  <div class="container py-5">
+    <!-- Заголовок + кнопка создания -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1 class="h3 mb-0">
+        <i class="bi bi-people me-2"></i>Мои команды
+      </h1>
+      <div class="d-flex gap-2">
+        <a href="{% url 'teams:team_create' %}" class="btn btn-primary btn-lg">
+          <i class="bi bi-plus-circle me-2"></i>Создать команду
+        </a>
+        <!-- Кнопка присоединиться по коду -->
+        <button type="button"
+                class="btn btn-outline-primary btn-lg"
+                data-bs-toggle="modal"
+                data-bs-target="#joinTeamModal">
+          <i class="bi bi-box-arrow-in-right me-2"></i>Присоединиться по коду
+        </button>
+      </div>
+    </div>
+    <!-- Список команд -->
+    {% if teams %}
+      <div class="row g-4">
+        {% for team in teams %}
+          <div class="col-md-6 col-lg-4">
+            <div class="card h-100 shadow-sm">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <h5 class="card-title mb-0">{{ team.name }}</h5>
+                  <!-- Роль пользователя -->
+                  {% for membership in team.members.all %}
+                    {% if membership.user == request.user %}
+                      {% if membership.role == 'owner' %}
+                        <span class="badge bg-danger">Владелец</span>
+                      {% elif membership.role == 'admin' %}
+                        <span class="badge bg-warning text-dark">Админ</span>
+                      {% else %}
+                        <span class="badge bg-secondary">Участник</span>
+                      {% endif %}
+                    {% endif %}
+                  {% endfor %}
+                </div>
+                {% if team.description %}
+                  <p class="card-text text-muted small">{{ team.description|truncatechars:100 }}</p>
+                {% else %}
+                  <p class="card-text text-muted small fst-italic">Описание отсутствует</p>
+                {% endif %}
+                <div class="mt-3">
+                  <small class="text-muted">
+                    <i class="bi bi-people me-1"></i>
+                    {{ team.members.count }} участников
+                  </small>
+                </div>
+              </div>
+              <div class="card-footer bg-light d-flex justify-content-between align-items-center">
+                <a href="{% url 'teams:team_detail' team.pk %}"
+                   class="btn btn-primary btn-sm">
+                  <i class="bi bi-arrow-right me-1"></i> Перейти
+                </a>
+                {% if team.owner == request.user %}
+                  <div>
+                    <a href="{% url 'teams:team_update' team.pk %}"
+                       class="btn btn-outline-secondary btn-sm">✏️</a>
+                    <a href="{% url 'teams:team_delete' team.pk %}"
+                       class="btn btn-outline-danger btn-sm">🗑</a>
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <!-- Пустое состояние -->
+      <div class="text-center py-5">
+        <i class="bi bi-people" style="font-size: 6rem; color: #6c757d;"></i>
+        <h4 class="text-muted mt-3">У вас пока нет команд</h4>
+        <p class="text-muted">Создайте свою первую команду, чтобы начать работать вместе</p>
+        <a href="{% url 'teams:team_create' %}" class="btn btn-primary mt-2">
+          <i class="bi bi-plus-circle me-2"></i>Создать первую команду
+        </a>
+      </div>
+    {% endif %}
+    <!-- Модальное окно -->
+    <div class="modal fade"
+         id="joinTeamModal"
+         tabindex="-1"
+         aria-labelledby="joinTeamModalLabel"
+         aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title" id="joinTeamModalLabel">
+              <i class="bi bi-box-arrow-in-right me-2"></i>Присоединиться к команде
+            </h5>
+            <button type="button"
+                    class="btn-close btn-close-white"
+                    data-bs-dismiss="modal"
+                    aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form method="get" action="{% url 'teams:team_join' %}">
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Код приглашения</label>
+                <input type="text"
+                       name="invite_code"
+                       class="form-control form-control-lg text-center"
+                       placeholder="Введите 12-значный код"
+                       maxlength="12"
+                       required>
+              </div>
+              <div class="d-grid">
+                <button type="submit" class="btn btn-primary btn-lg">
+                  <i class="bi bi-box-arrow-in-right me-2"></i>Присоединиться
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

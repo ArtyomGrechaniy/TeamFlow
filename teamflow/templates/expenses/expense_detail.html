@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% block title %}{{ expense.title }}{% endblock %}
+{% block content %}
+  <div class="container py-5">
+    <!-- Заголовок -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h1 class="h3 mb-2">{{ expense.title }}</h1>
+        <div class="d-flex align-items-center gap-2">
+          {% if expense.team %}
+            <span class="badge bg-info">Командный</span>
+          {% else %}
+            <span class="badge bg-secondary">Личный</span>
+          {% endif %}
+          {% if expense.category %}
+            <span class="badge"
+                  style="background-color: {{ expense.category.color|default:'#6c757d' }}">
+              {{ expense.category.name }}
+            </span>
+          {% endif %}
+        </div>
+      </div>
+      <div class="btn-group">
+        <a href="{% url 'expenses:expense_update' expense.pk %}"
+           class="btn btn-outline-primary">✏️ Редактировать</a>
+        <a href="{% url 'expenses:expense_delete' expense.pk %}"
+           class="btn btn-outline-danger">🗑 Удалить</a>
+      </div>
+    </div>
+    <!-- Основной блок с суммой -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-body p-4">
+        <div class="row align-items-center">
+          <!-- Сумма в рублях -->
+          <div class="col-md-6">
+            <div class="text-muted small mb-1">Сумма в рублях</div>
+            <div class="display-5 fw-bold text-success">{{ expense.amount_rub|default:expense.amount|floatformat:2 }} ₽</div>
+          </div>
+          <!-- Исходная сумма -->
+          {% if expense.currency != 'RUB' %}
+            <div class="col-md-6 mt-3 mt-md-0">
+              <div class="text-muted small mb-1">В исходной валюте</div>
+              <div class="h4 text-muted">{{ expense.amount|floatformat:2 }} {{ expense.get_currency_display }}</div>
+              {% if expense.exchange_rate %}
+                <div class="small text-muted">Курс: 1 {{ expense.get_currency_display }} = {{ expense.exchange_rate }} ₽</div>
+              {% endif %}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <!-- Описание -->
+      <div class="col-lg-7">
+        <div class="card shadow-sm mb-4">
+          <div class="card-header bg-light">
+            <h5 class="mb-0">
+              <i class="bi bi-chat-left-text me-2"></i>Описание
+            </h5>
+          </div>
+          <div class="card-body">
+            {% if expense.description %}
+              <p class="mb-0">{{ expense.description|linebreaks }}</p>
+            {% else %}
+              <p class="text-muted mb-0">Описание отсутствует</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <!-- Дополнительная информация -->
+      <div class="col-lg-5">
+        <div class="card shadow-sm mb-4">
+          <div class="card-header bg-light">
+            <h5 class="mb-0">
+              <i class="bi bi-info-circle me-2"></i>Информация
+            </h5>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <strong>Дата расхода</strong>
+              <br>
+              <span class="text-muted">{{ expense.date|date:"d F Y" }}</span>
+            </div>
+            {% if expense.team %}
+              <div>
+                <strong>Команда</strong>
+                <br>
+                <a href="{% url 'teams:team_detail' expense.team.pk %}">{{ expense.team.name }}</a>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

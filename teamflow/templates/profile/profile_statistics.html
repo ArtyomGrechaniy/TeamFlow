@@ -1,0 +1,403 @@
+{% extends 'base.html' %}
+{% block title %}Моя статистика{% endblock %}
+{% block content %}
+  <div class="container py-5">
+    <!-- ==================== ПРОФИЛЬ + ОБЩАЯ СТАТИСТИКА ==================== -->
+    <div class="card shadow-sm mb-5">
+      <div class="card-body p-4">
+        <!-- === HEADER (Профиль) === -->
+        <div class="d-flex flex-column flex-md-row align-items-center mb-4">
+          <!-- Аватарка -->
+          <div class="me-md-4 mb-3 mb-md-0">
+            {% if user.profile.avatar %}
+              <!-- Реальная аватарка пользователя -->
+              <img src="{{ user.profile.avatar.url }}"
+                   class="rounded-circle border border-3 border-primary shadow-sm"
+                   width="120"
+                   height="120"
+                   alt="Аватар">
+            {% else %}
+              <!-- Фоллбэк — инициалы -->
+              <div class="rounded-circle bg-primary text-white fw-bold d-flex align-items-center justify-content-center border border-3 border-primary shadow-sm"
+                   style="width: 120px;
+                          height: 120px;
+                          font-size: 2.5rem">
+                {{ user.profile.avatar_initials|default:user.username|slice:":2"|upper }}
+              </div>
+            {% endif %}
+          </div>
+          <!-- Информация о пользователе -->
+          <div class="flex-grow-1">
+            <h2 class="mb-1">{{ user.get_full_name|default:user.username }}</h2>
+            <p class="text-muted mb-2">@{{ user.username }}</p>
+            <div class="d-flex flex-wrap gap-3">
+              <div>
+                <small class="text-muted">В системе с</small>
+                <br>
+                <strong>{{ user.date_joined|date:"d F Y" }}</strong>
+              </div>
+              <div>
+                <small class="text-muted">Участник команд</small>
+                <br>
+                <strong>{{ teams_count|default:0 }}</strong>
+              </div>
+            </div>
+          </div>
+          <!-- Кнопки быстрых действий -->
+          <div class="d-flex flex-column gap-2 mt-3 mt-md-0">
+            <a href="{% url 'expenses:expense_create' %}" class="btn btn-primary">
+              <i class="bi bi-plus-circle me-2"></i>Добавить расход
+            </a>
+            <a href="{% url 'tasks:task_create' %}" class="btn btn-success">
+              <i class="bi bi-plus-circle me-2"></i>Добавить задачу
+            </a>
+          </div>
+        </div>
+        <hr class="my-4">
+        <!-- === ОБЩАЯ СТАТИСТИКА === -->
+        <h5 class="mb-3">
+          <i class="bi bi-graph-up me-2"></i>Общая статистика
+        </h5>
+        <div class="row g-3">
+          <!-- Карточка 1: Общая сумма расходов -->
+          <div class="col-md-2 col-6">
+            <div class="card bg-light border-0 h-100">
+              <div class="card-body text-center">
+                <div class="text-muted small">Общая сумма расходов</div>
+                <div class="h4 fw-bold text-primary mt-2">{{ total_expenses_amount|floatformat:0|default:0 }} ₽</div>
+              </div>
+            </div>
+          </div>
+          <!-- Карточка 2: Количество расходов -->
+          <div class="col-md-2 col-6">
+            <div class="card bg-light border-0 h-100">
+              <div class="card-body text-center">
+                <div class="text-muted small">Расходов</div>
+                <div class="h4 fw-bold text-primary mt-2">{{ total_expenses_count|default:0 }}</div>
+              </div>
+            </div>
+          </div>
+          <!-- Карточка 3: Количество задач -->
+          <div class="col-md-2 col-6">
+            <div class="card bg-light border-0 h-100">
+              <div class="card-body text-center">
+                <div class="text-muted small">Задач</div>
+                <div class="h4 fw-bold text-success mt-2">{{ total_tasks_count|default:0 }}</div>
+              </div>
+            </div>
+          </div>
+          <!-- Карточка 4: Выполненные задачи -->
+          <div class="col-md-2 col-6">
+            <div class="card bg-light border-0 h-100">
+              <div class="card-body text-center">
+                <div class="text-muted small">Выполнено</div>
+                <div class="h4 fw-bold text-success mt-2">
+                  {{ completed_tasks_count|default:0 }}
+                  <small class="text-muted">({{ completed_tasks_percent|default:0 }}%)</small>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Карточка 5: Количество команд -->
+          <div class="col-md-2 col-6">
+            <div class="card bg-light border-0 h-100">
+              <div class="card-body text-center">
+                <div class="text-muted small">Команд</div>
+                <div class="h4 fw-bold text-info mt-2">{{ teams_count|default:0 }}</div>
+              </div>
+            </div>
+          </div>
+          <!-- Карточка 6: Категорий -->
+          <div class="col-md-2 col-6">
+            <div class="card bg-light border-0 h-100">
+              <div class="card-body text-center">
+                <div class="text-muted small">Категорий</div>
+                <div class="h4 fw-bold text-warning mt-2">{{ categories_count|default:0 }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- ==================== РАСХОДЫ ==================== -->
+    <div class="card shadow-sm mb-5"
+         onclick="window.location='{% url 'expenses:expense_list' %}'"
+         style="cursor: pointer;
+                transition: transform 0.2s, box-shadow 0.2s"
+         onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 15px rgba(0,0,0,0.1)'"
+         onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow=''">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">
+          <i class="bi bi-wallet2 me-2"></i>Расходы
+        </h5>
+      </div>
+      <div class="card-body">
+        {% if by_category %}
+          <div class="mb-2">
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span class="fw-semibold">Распределение по категориям</span>
+              <span class="text-muted small">Всего: {{ total_expenses_amount|floatformat:0 }} ₽</span>
+            </div>
+          </div>
+          {% for item in by_category %}
+            <div class="mb-3">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <div></div>
+                <div class="text-end">
+                  <span class="fw-semibold">{{ item.total|floatformat:0 }} ₽</span>
+                  <small class="text-muted ms-1">({{ item.percent }}%)</small>
+                </div>
+              </div>
+              <!-- Прогресс-бар -->
+              <div class="progress" style="height: 8px; background-color: #f1f1f1;">
+                <div class="progress-bar"
+                     style="width: {{ item.percentage }}%;
+                            background-color: {{ item.color }}"></div>
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <div class="text-center py-4">
+            <i class="bi bi-wallet2 text-muted" style="font-size: 3rem;"></i>
+            <p class="text-muted mt-2 mb-0">Пока нет данных о расходах</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+    <!-- ==================== ЗАДАЧИ ==================== -->
+    <div class="card shadow-sm mb-5"
+         onclick="window.location='{% url 'tasks:task_list' %}'"
+         style="cursor: pointer;
+                transition: transform 0.2s, box-shadow 0.2s"
+         onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 15px rgba(0,0,0,0.1)'"
+         onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow=''">
+      <div class="card-header bg-success text-white">
+        <h5 class="mb-0">
+          <i class="bi bi-list-task me-2"></i>Задачи
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <!-- Статистика по статусам -->
+          <div class="col-md-6 mb-4">
+            <h6 class="mb-3">По статусам</h6>
+            <div class="mb-2">
+              <div class="d-flex justify-content-between small mb-1">
+                <span>К выполнению</span>
+                <span class="fw-bold">{{ tasks_todo_count|default:0 }}</span>
+              </div>
+              <div class="progress" style="height: 8px;">
+                <div class="progress-bar bg-primary"
+                     style="width: {{ tasks_todo_percent|default:0 }}%"></div>
+              </div>
+            </div>
+            <div class="mb-2">
+              <div class="d-flex justify-content-between small mb-1">
+                <span>В работе</span>
+                <span class="fw-bold">{{ tasks_in_progress_count|default:0 }}</span>
+              </div>
+              <div class="progress" style="height: 8px;">
+                <div class="progress-bar bg-warning"
+                     style="width: {{ tasks_in_progress_percent|default:0 }}%"></div>
+              </div>
+            </div>
+            <div class="mb-2">
+              <div class="d-flex justify-content-between small mb-1">
+                <span>Выполнено</span>
+                <span class="fw-bold">{{ tasks_done_count|default:0 }}</span>
+              </div>
+              <div class="progress" style="height: 8px;">
+                <div class="progress-bar bg-success"
+                     style="width: {{ tasks_done_percent|default:0 }}%"></div>
+              </div>
+            </div>
+            <div>
+              <div class="d-flex justify-content-between small mb-1">
+                <span>В архиве</span>
+                <span class="fw-bold">{{ tasks_archived_count|default:0 }}</span>
+              </div>
+              <div class="progress" style="height: 8px;">
+                <div class="progress-bar bg-secondary"
+                     style="width: {{ tasks_archived_percent|default:0 }}%"></div>
+              </div>
+            </div>
+          </div>
+          <!-- Статистика по приоритетам + просроченные -->
+          <div class="col-md-6">
+            <h6 class="mb-3">По приоритетам</h6>
+            <div class="row text-center">
+              <div class="col-3">
+                <div class="border rounded p-2">
+                  <div class="text-success small">Низкий</div>
+                  <div class="h5 fw-bold">{{ tasks_low_priority|default:0 }}</div>
+                </div>
+              </div>
+              <div class="col-3">
+                <div class="border rounded p-2">
+                  <div class="text-info small">Средний</div>
+                  <div class="h5 fw-bold">{{ tasks_medium_priority|default:0 }}</div>
+                </div>
+              </div>
+              <div class="col-3">
+                <div class="border rounded p-2">
+                  <div class="text-warning small">Высокий</div>
+                  <div class="h5 fw-bold">{{ tasks_high_priority|default:0 }}</div>
+                </div>
+              </div>
+              <div class="col-3">
+                <div class="border rounded p-2">
+                  <div class="text-danger small">Срочный</div>
+                  <div class="h5 fw-bold">{{ tasks_urgent_priority|default:0 }}</div>
+                </div>
+              </div>
+            </div>
+            <!-- Просроченные задачи -->
+            <div class="mt-4 p-3 bg-light rounded">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <strong>Просроченные задачи</strong>
+                </div>
+                <div>
+                  <span class="badge bg-danger fs-6">{{ overdue_tasks_count|default:0 }}</span>
+                </div>
+              </div>
+              <small class="text-muted">Задачи с истёкшим дедлайном</small>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- ==================== КОМАНДЫ ==================== -->
+    <div class="card shadow-sm mb-5">
+      <div class="card-header bg-info text-white">
+        <h5 class="mb-0">
+          <i class="bi bi-people me-2"></i>Мои команды
+        </h5>
+      </div>
+      <div class="card-body p-0">
+        {% if user_teams %}
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>Название команды</th>
+                  <th>Моя роль</th>
+                  <th class="text-center text-danger border border-danger rounded"
+                      style="border-width: 2px !important">Просроченных дедлайнов</th>
+                  <th class="text-center">Расходов</th>
+                  <th class="text-center">Задач</th>
+                  <th class="text-center">Действия</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for membership in user_teams %}
+                  <tr>
+                    <td>
+                      <strong>{{ membership.team }}</strong>
+                    </td>
+                    <td>
+                      {% if team.role == 'owner' %}
+                        <span class="badge bg-danger">Владелец</span>
+                      {% elif team.role == 'admin' %}
+                        <span class="badge bg-warning text-dark">Администратор</span>
+                      {% else %}
+                        <span class="badge bg-secondary">Участник</span>
+                      {% endif %}
+                    </td>
+                    <td class="text-center">
+                      {% if membership.overdue_tasks_count %}
+                        <span class="badge bg-danger fw-bold">{{ membership.overdue_tasks_count }}</span>
+                      {% else %}
+                        <span class="text-muted">0</span>
+                      {% endif %}
+                    </td>
+                    <td class="text-center">
+                      <span class="badge bg-primary">{{ membership.expenses_count|default:0 }}</span>
+                    </td>
+                    <td class="text-center">
+                      <span class="badge bg-success">{{ membership.tasks_count|default:0 }}</span>
+                    </td>
+                    <td class="text-center">
+                      <a href="{% url 'teams:team_detail' membership.team.pk %}"
+                         class="btn btn-sm btn-outline-primary">Перейти</a>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="text-center py-4">
+            <p class="text-muted mb-2">Вы пока не состоите ни в одной команде</p>
+            <a href="{% url 'teams:team_create' %}" class="btn btn-info btn-sm">
+              <i class="bi bi-plus-circle me-1"></i>Создать команду
+            </a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+    <!-- ==================== БЫСТРЫЕ ДЕЙСТВИЯ ==================== -->
+    <div class="card shadow-sm mb-5">
+      <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0">
+          <i class="bi bi-lightning-charge me-2"></i>Быстрые действия
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-3 col-6">
+            <a href="{% url 'expenses:expense_create' %}"
+               class="btn btn-primary w-100 py-3">
+              <i class="bi bi-plus-circle fs-4 d-block mb-1"></i>
+              <span>Добавить расход</span>
+            </a>
+          </div>
+          <div class="col-md-3 col-6">
+            <a href="{% url 'tasks:task_create' %}"
+               class="btn btn-success w-100 py-3">
+              <i class="bi bi-plus-circle fs-4 d-block mb-1"></i>
+              <span>Добавить задачу</span>
+            </a>
+          </div>
+          <div class="col-md-3 col-6">
+            <a href="{% url 'expenses:category_create' %}"
+               class="btn btn-info w-100 py-3">
+              <i class="bi bi-tags fs-4 d-block mb-1"></i>
+              <span>Новая категория расходов</span>
+            </a>
+          </div>
+          <div class="col-md-3 col-6">
+            <a href="{% url 'tasks:category_create' %}"
+               class="btn btn-warning w-100 py-3">
+              <i class="bi bi-tags fs-4 d-block mb-1"></i>
+              <span>Новая категория задач</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% block extra_js %}
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Прогресс-бары расходов
+    document.querySelectorAll('.progress-bar').forEach(function(bar) {
+        // Получаем процент из атрибута style или data-percent
+        let width = parseFloat(bar.style.width) || parseFloat(bar.dataset.percent) || 0;
+        bar.style.width = '0%'; // стартовая позиция для анимации
+        bar.style.transition = 'width 1s ease-in-out';
+
+        // Цвет можно задать через data-color или оставить существующий
+        if (bar.dataset.color) {
+            bar.style.backgroundColor = bar.dataset.color;
+        }
+
+        // Анимация: устанавливаем ширину через setTimeout, чтобы сработал transition
+        setTimeout(() => {
+            bar.style.width = width + '%';
+        }, 50);
+    });
+});
+    </script>
+  {% endblock %}
+{% endblock %}

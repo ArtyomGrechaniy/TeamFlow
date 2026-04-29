@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}{{ title|default:"Удаление объекта" }}{% endblock %}
+{% block content %}
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-lg-6">
+        <div class="card shadow-sm border-danger">
+          <div class="card-header bg-danger text-white">
+            <h4 class="mb-0">
+              <i class="bi bi-exclamation-triangle-fill me-2"></i>
+              {{ title|default:"Удаление объекта" }}
+            </h4>
+          </div>
+          <div class="card-body p-4 text-center">
+            <i class="bi bi-trash3 text-danger" style="font-size: 4.5rem;"></i>
+            <h5 class="mt-4">{{ message|default:"Вы уверены, что хотите удалить этот объект?" }}</h5>
+            {% if object %}
+              <div class="alert alert-light mt-3">
+                <strong>{{ object }}</strong>
+              </div>
+            {% endif %}
+            <p class="text-muted small mt-2">Это действие нельзя отменить.</p>
+          </div>
+          <div class="card-footer bg-light d-flex justify-content-center gap-3 py-3">
+            <form method="post">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger px-4">
+                <i class="bi bi-trash3 me-2"></i>Да, удалить
+              </button>
+            </form>
+            <a href="{{ cancel_url|default:'/' }}"
+               class="btn btn-outline-secondary px-4">Отмена</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

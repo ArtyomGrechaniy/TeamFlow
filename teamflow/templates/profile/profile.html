@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% block title %}{{ profile.user.get_full_name|default:profile.user.username }}{% endblock %}
+{% block content %}
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+        <!-- Шапка профиля -->
+        <div class="card shadow-sm mb-4">
+          <div class="card-body p-4">
+            <div class="d-flex flex-column flex-md-row align-items-center">
+              <!-- Аватарка -->
+              <div class="me-md-4 mb-3 mb-md-0">
+                {% if profile.avatar %}
+                  <img src="{{ profile.avatar.url }}"
+                       class="rounded-circle border border-3 border-primary shadow-sm"
+                       width="140"
+                       height="140"
+                       alt="Аватар">
+                {% else %}
+                  <div class="rounded-circle bg-primary text-white fw-bold d-flex align-items-center justify-content-center border border-3 border-primary shadow-sm"
+                       style="width: 140px;
+                              height: 140px;
+                              font-size: 3rem">{{ profile.avatar_initials }}</div>
+                {% endif %}
+              </div>
+              <!-- Информация -->
+              <div class="flex-grow-1 text-center text-md-start">
+                <h2 class="mb-1">{{ profile.user.get_full_name|default:profile.user.username }}</h2>
+                <p class="text-muted mb-2">@{{ profile.user.username }}</p>
+                <div class="d-flex flex-wrap justify-content-center justify-content-md-start gap-3 mt-2">
+                  <div>
+                    <small class="text-muted">В системе с</small>
+                    <br>
+                    <strong>{{ profile.user.date_joined|date:"d F Y" }}</strong>
+                  </div>
+                  {% if profile.user == request.user %}
+                    <div>
+                      <a href="{% url 'core:profile_edit' %}"
+                         class="btn btn-outline-primary btn-sm mt-2">
+                        <i class="bi bi-pencil me-1"></i>Редактировать профиль
+                      </a>
+                    </div>
+                    <div>
+                      <a href="{% url 'core:profile_statistic' %}"
+                         class="btn btn-outline-success btn-sm mt-2">
+                        <i class="bi bi-bar-chart-line me-1"></i>Статистика
+                      </a>
+                    </div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Bio -->
+        {% if profile.bio %}
+          <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+              <h5 class="mb-0">
+                <i class="bi bi-person-lines-fill me-2"></i>О себе
+              </h5>
+            </div>
+            <div class="card-body">
+              <p class="mb-0">{{ profile.bio|linebreaks }}</p>
+            </div>
+          </div>
+        {% endif %}
+        <!-- Ссылки -->
+        <div class="card shadow-sm mb-4">
+          <div class="card-header bg-light">
+            <h5 class="mb-0">
+              <i class="bi bi-link-45deg me-2"></i>Контакты и ссылки
+            </h5>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              {% if profile.github_url %}
+                <div class="col-md-6">
+                  <a href="{{ profile.github_url }}"
+                     target="_blank"
+                     class="btn btn-outline-dark w-100">
+                    <i class="bi bi-github me-2"></i>GitHub
+                  </a>
+                </div>
+              {% endif %}
+              {% if profile.telegram %}
+                <div class="col-md-6">
+                  {% if profile.telegram|slice:":4" == "http" %}
+                    <a href="{{ profile.telegram }}"
+                       target="_blank"
+                       class="btn btn-outline-primary w-100">
+                      <i class="bi bi-telegram me-2"></i>Telegram
+                    </a>
+                  {% else %}
+                    <a href="https://t.me/{{ profile.telegram|cut:'@' }}"
+                       target="_blank"
+                       class="btn btn-outline-primary w-100">
+                      <i class="bi bi-telegram me-2"></i>@{{ profile.telegram|cut:'@' }}
+                    </a>
+                  {% endif %}
+                </div>
+              {% endif %}
+              {% if not profile.github_url and not profile.telegram %}
+                <div class="col-12">
+                  <p class="text-muted mb-0">Пользователь пока не добавил контакты</p>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

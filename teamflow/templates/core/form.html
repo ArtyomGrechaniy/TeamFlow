@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-lg-7">
+        <div class="card shadow-sm">
+          <!-- Заголовок -->
+          <div class="card-header {{ header_color|default:'bg-primary' }} text-white">
+            <h4 class="mb-0">{{ icon|default:'📝' }} {{ title }}</h4>
+          </div>
+          <div class="card-body p-4">
+            <form method="post" novalidate>
+              {% csrf_token %}
+              {% for field in form %}
+                {% if field.name != 'currency' %}
+                  <div class="mb-3">
+                    {% if field.name == 'amount' %}
+                      <label class="form-label fw-semibold">{{ field.label }}</label>
+                      <div class="input-group">
+                        {{ field }}
+                        <span class="input-group-text bg-light border-start-0">{{ form.currency }}</span>
+                      </div>
+                    {% else %}
+                      {{ field.label_tag }}
+                      {{ field }}
+                    {% endif %}
+                    {% if field.help_text %}<small class="text-muted d-block">{{ field.help_text }}</small>{% endif %}
+                    {% if field.errors %}<div class="invalid-feedback d-block">{{ field.errors }}</div>{% endif %}
+                  </div>
+                {% endif %}
+              {% endfor %}
+              <!-- Кнопки -->
+              <div class="d-flex gap-2 mt-4">
+                <button type="submit"
+                        class="btn {{ button_color|default:'btn-primary' }} flex-grow-1">
+                  {{ submit_text|default:"Сохранить" }}
+                </button>
+                {% if cancel_url %}<a href="{{ cancel_url }}" class="btn btn-outline-secondary">Отмена</a>{% endif %}
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

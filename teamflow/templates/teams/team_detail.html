@@ -1,0 +1,379 @@
+{% extends 'base.html' %}
+{% block title %}{{ team.name }}{% endblock %}
+{% block content %}
+  <div class="container py-5">
+    <!-- Заголовок и кнопки -->
+    <div class="d-flex justify-content-between align-items-start mb-4">
+      <div>
+        <h1 class="h3 mb-2">{{ team.name }}</h1>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+          <span class="badge {% if user_role == 'owner' %}bg-danger {% elif user_role == 'admin' %}bg-warning text-dark {% else %}bg-secondary{% endif %}">
+            {% if user_role == 'owner' %}
+              Владелец
+            {% elif user_role == 'admin' %}
+              Администратор
+            {% else %}
+              Участник
+            {% endif %}
+          </span>
+          <small class="text-muted">Создана {{ team.created_at|date:"d F Y" }}</small>
+        </div>
+      </div>
+      <!-- Кнопки действий -->
+      <div class="btn-group">
+        {% if is_owner %}
+          <a href="{% url 'teams:team_update' team.pk %}"
+             class="btn btn-outline-primary">
+            <i class="bi bi-pencil-square me-1"></i> Редактировать
+          </a>
+          <a href="{% url 'teams:team_delete' team.pk %}"
+             class="btn btn-outline-danger">
+            <i class="bi bi-trash me-1"></i> Удалить
+          </a>
+        {% else %}
+          <a href="{% url 'teams:team_leave' team.pk %}"
+             class="btn btn-outline-warning">
+            <i class="bi bi-box-arrow-right me-1"></i> Выйти из команды
+          </a>
+        {% endif %}
+      </div>
+    </div>
+    <div class="row">
+      <!-- Описание команды -->
+      <div class="col-lg-8">
+        <div class="card shadow-sm mb-4">
+          <div class="card-header bg-light">
+            <h5 class="mb-0">
+              <i class="bi bi-info-circle me-2"></i>Описание
+            </h5>
+          </div>
+          <div class="card-body">
+            {% if team.description %}
+              <p class="mb-0">{{ team.description|linebreaks }}</p>
+            {% else %}
+              <p class="text-muted mb-0">Описание отсутствует</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      <!-- Информация о команде -->
+      <div class="col-lg-4">
+        <div class="card shadow-sm mb-4">
+          <div class="card-header bg-light">
+            <h5 class="mb-0">
+              <i class="bi bi-info-circle me-2"></i>Информация
+            </h5>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <strong>Владелец</strong>
+              <br>
+              <span class="text-primary">{{ team.owner.get_full_name|default:team.owner.username }}</span>
+            </div>
+            <div class="mb-3">
+              <strong>Код приглашения</strong>
+              <br>
+              {% if is_owner or is_admin %}
+                <code class="bg-light px-2 py-1 rounded">{{ team.invite_code }}</code>
+                <button class="btn btn-sm btn-outline-secondary ms-2"
+                        onclick="copyInviteCode()">
+                  <i class="bi bi-clipboard"></i>
+                </button>
+              {% else %}
+                <span class="text-muted">Доступен только админам</span>
+              {% endif %}
+            </div>
+            <div>
+              <strong>Участников</strong>
+              <br>
+              <span class="badge bg-primary fs-6">{{ members.count }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- ==================== СТАТИСТИКА ЗАДАЧ ==================== -->
+    <div class="row mb-4">
+      <div class="col-md-4">
+        <div class="card shadow-sm border-warning">
+          <div class="card-body text-center">
+            <h6 class="text-muted">Активные задачи</h6>
+            <div class="h2 fw-bold text-warning">{{ active_tasks_count }}</div>
+            <small class="text-muted">К выполнению + В работе</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card shadow-sm border-danger">
+          <div class="card-body text-center">
+            <h6 class="text-muted">Просроченные задачи</h6>
+            <div class="h2 fw-bold text-danger">{{ overdue_tasks_count }}</div>
+            <small class="text-muted">С истёкшим дедлайном</small>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card shadow-sm border">
+          <div class="card-body text-center">
+            <h6 class="text-muted">Заархивированные задачи</h6>
+            <div class="h2 fw-bold text">{{ archived_tasks }}</div>
+            <small class="text-muted">Заархивированных задач</small>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- ==================== РАСХОДЫ ==================== -->
+    <div class="row">
+      <!-- За последний месяц -->
+      <div class="col-md-6">
+        <div class="card shadow-sm mb-4">
+          <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+              <i class="bi bi-calendar-month me-2"></i>За последние 30 дней
+            </h5>
+          </div>
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <div class="h3 fw-bold text-primary">{{ expenses_last_month_total|floatformat:0 }} ₽</div>
+                <small class="text-muted">{{ expenses_last_month_count }} расходов</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- За последний год -->
+      <div class="col-md-6">
+        <div class="card shadow-sm mb-4">
+          <div class="card-header bg-success text-white">
+            <h5 class="mb-0">
+              <i class="bi bi-calendar-year me-2"></i>За последние 365 дней
+            </h5>
+          </div>
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <div class="h3 fw-bold text-success">{{ expenses_last_year_total|floatformat:0 }} ₽</div>
+                <small class="text-muted">{{ expenses_last_year_count }} расходов</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- ==================== АКТИВНЫЕ ЗАДАЧИ ==================== -->
+    {% if active_tasks %}
+      <div class="card shadow-sm mb-4">
+        <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+          <h5 class="mb-0">
+            <i class="bi bi-exclamation-triangle me-2"></i>Активные задачи
+          </h5>
+          <span class="badge bg-danger">{{ active_tasks_count }}</span>
+        </div>
+        <div class="card-body p-0">
+          <div class="overflow-auto" style="max-height: 320px;">
+            <table class="table table-hover mb-0">
+              <thead class="table-light sticky-top">
+                <tr>
+                  <th>Задача</th>
+                  <th>Приоритет</th>
+                  <th>Дедлайн</th>
+                  <th>Исполнитель</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for task in active_tasks %}
+                  <tr onclick="window.location='{% url 'teams:tasks:task_detail' team.id task.pk %}'"
+                      style="cursor: pointer">
+                    <td>
+                      <strong>{{ task.title }}</strong>
+                    </td>
+                    <td>
+                      <span class="badge {% if task.priority == 'urgent' %}bg-danger {% elif task.priority == 'high' %}bg-warning text-dark {% else %}bg-info{% endif %}">
+                        {{ task.get_priority_display }}
+                      </span>
+                    </td>
+                    <td>
+                      {% if task.deadline %}
+                        {% if task.is_overdue %}
+                          <span class="text-danger fw-bold">{{ task.deadline|date:"d.m.Y" }}</span>
+                        {% else %}
+                          {{ task.deadline|date:"d.m.Y" }}
+                        {% endif %}
+                      {% else %}
+                        <span class="text-muted">—</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% if task.assigned_to %}
+                        <div class="d-flex align-items-center">
+                          {% if task.assigned_to.profile.avatar %}
+                            <img src="{{ task.assigned_to.profile.avatar.url }}"
+                                 class="rounded-circle me-2"
+                                 width="28"
+                                 height="28"
+                                 alt="avatar">
+                          {% else %}
+                            <div class="bg-secondary rounded-circle me-2 d-flex align-items-center justify-content-center"
+                                 style="width: 28px;
+                                        height: 28px;
+                                        font-size: 12px;
+                                        color: white">{{ task.assigned_to.username|slice:":2"|upper }}</div>
+                          {% endif %}
+                          <span>{{ task.assigned_to.get_full_name|default:task.assigned_to.username }}</span>
+                        </div>
+                      {% else %}
+                        <span class="text-muted">Не назначен</span>
+                      {% endif %}
+                    </td>
+                    <td class="text-end">
+                      <a href="{% url 'teams:tasks:task_update' team.id task.pk %}"
+                         class="btn btn-sm btn-outline-secondary"
+                         onclick="event.stopImmediatePropagation()">✏️</a>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    {% else %}
+      <div class="alert alert-success mb-4">
+        <i class="bi bi-check-circle me-2"></i> Срочных задач нет. Отличная работа!
+      </div>
+    {% endif %}
+    <!-- Списки -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-6">
+        <a href="{% url 'teams:expenses:expense_list' team_id=team.id %}"
+           class="btn btn-primary w-100 py-3">
+          <i class="bi bi-wallet2 fs-4 d-block mb-1"></i>
+          <span>Список расходов</span>
+        </a>
+      </div>
+      <div class="col-md-6">
+        <a href="{% url 'teams:tasks:task_list' team_id=team.id %}"
+           class="btn btn-success w-100 py-3">
+          <i class="bi bi-list-task fs-4 d-block mb-1"></i>
+          <span>Список задач</span>
+        </a>
+      </div>
+    </div>
+    <!-- Быстрые действия -->
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0">
+          <i class="bi bi-lightning-charge me-2"></i>Быстрые действия
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-3 col-6">
+            <a href="{% url 'teams:expenses:expense_create' team_id=team.id %}"
+               class="btn btn-primary w-100 py-3">
+              <i class="bi bi-plus-circle fs-4 d-block mb-1"></i>
+              <span>Добавить расход</span>
+            </a>
+          </div>
+          <div class="col-md-3 col-6">
+            <a href="{% url 'teams:tasks:task_create' team_id=team.id %}"
+               class="btn btn-success w-100 py-3">
+              <i class="bi bi-plus-circle fs-4 d-block mb-1"></i>
+              <span>Добавить задачу</span>
+            </a>
+          </div>
+          <div class="col-md-3 col-6">
+            <a href="{% url 'teams:expenses:category_create' team_id=team.id %}"
+               class="btn btn-info w-100 py-3">
+              <i class="bi bi-tags fs-4 d-block mb-1"></i>
+              <span>Новая категория расходов</span>
+            </a>
+          </div>
+          <div class="col-md-3 col-6">
+            <a href="{% url 'teams:tasks:category_create' team_id=team.id %}"
+               class="btn btn-warning w-100 py-3">
+              <i class="bi bi-tags fs-4 d-block mb-1"></i>
+              <span>Новая категория задач</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
+          <i class="bi bi-people me-2"></i>Участники команды ({{ members.count }})
+        </h5>
+        {% if is_owner or is_admin %}
+          <a href="{% url 'teams:team_member_list' team.pk %}"
+             class="btn btn-sm btn-outline-primary">Управление</a>
+        {% endif %}
+      </div>
+      <div class="card-body p-0">
+        <div class="list-group list-group-flush">
+          {% for member in members %}
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+              <div class="d-flex align-items-center">
+                <!-- Аватар -->
+                {% if member.user.profile.avatar %}
+                  <img src="{{ member.user.profile.avatar.url }}"
+                       class="rounded-circle me-3 border"
+                       width="45"
+                       height="45"
+                       alt="avatar">
+                {% else %}
+                  <div class="bg-primary text-white rounded-circle me-3 d-flex align-items-center justify-content-center border"
+                       style="width: 45px;
+                              height: 45px;
+                              font-size: 18px;
+                              font-weight: bold">{{ member.user.username|slice:":2"|upper }}</div>
+                {% endif %}
+                <div>
+                  <strong>{{ member.user.get_full_name|default:member.user.username }}</strong>
+                  {% if member.user == request.user %}<span class="badge bg-primary ms-2">Вы</span>{% endif %}
+                  <br>
+                  <small class="text-muted">@{{ member.user.username }}</small>
+                </div>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <!-- Роль -->
+                {% if member.role == 'owner' %}
+                  <span class="badge bg-danger">Владелец</span>
+                {% elif member.role == 'admin' %}
+                  <span class="badge bg-warning text-dark">Админ</span>
+                {% else %}
+                  <span class="badge bg-secondary">Участник</span>
+                {% endif %}
+                <!-- Кнопки управления -->
+                {% if is_owner and member.user != request.user %}
+                  <div class="btn-group btn-group-sm">
+                    <a href="{% url 'teams:team_member_kick' team.pk member.user.id %}"
+                       class="btn btn-outline-danger"
+                       onclick="return confirm('Исключить участника?')">✕</a>
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    function copyInviteCode() {
+        const code = "{{ team.invite_code }}";
+        navigator.clipboard.writeText(code).then(() => {
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="bi bi-check"></i> Скопировано!';
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+            }, 1500);
+        }).catch(() => {
+            alert('Код: ' + code);
+        });
+    }
+  </script>
+{% endblock %}

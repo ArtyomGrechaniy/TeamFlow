@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% block title %}Редактировать профиль{% endblock %}
+{% block content %}
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+        <div class="card shadow-sm">
+          <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">
+              <i class="bi bi-pencil-square me-2"></i>Редактировать профиль
+            </h4>
+          </div>
+          <div class="card-body p-4">
+            <form method="post" enctype="multipart/form-data">
+              {% csrf_token %}
+              <!-- Аватарка -->
+              <div class="mb-4 text-center">
+                <label class="form-label fw-semibold">Аватарка</label>
+                <br>
+                {% if profile.avatar %}
+                  <img src="{{ profile.avatar.url }}"
+                       class="rounded-circle border border-2 border-primary mb-3"
+                       width="120"
+                       height="120"
+                       alt="Текущая аватарка"
+                       id="avatarPreview">
+                {% else %}
+                  <div class="rounded-circle bg-primary text-white fw-bold d-flex align-items-center justify-content-center border border-2 border-primary mb-3 mx-auto"
+                       style="width: 120px;
+                              height: 120px;
+                              font-size: 2.5rem"
+                       id="avatarPreview">{{ profile.avatar_initials }}</div>
+                {% endif %}
+                <div class="mt-2">{{ form.avatar }}</div>
+                <small class="text-muted">Рекомендуемый размер: 400×400 px</small>
+              </div>
+              <!-- Имя и Фамилия -->
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label fw-semibold">Имя</label>
+                  {{ form.first_name }}
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label fw-semibold">Фамилия</label>
+                  {{ form.last_name }}
+                </div>
+              </div>
+              <!-- Bio -->
+              <div class="mb-3">
+                <label class="form-label fw-semibold">О себе</label>
+                {{ form.bio }}
+                <small class="text-muted">Расскажите о себе (до 2000 символов)</small>
+              </div>
+              <!-- GitHub -->
+              <div class="mb-3">
+                <label class="form-label fw-semibold">GitHub</label>
+                {{ form.github_url }}
+                <small class="text-muted">https://github.com/ваш_ник</small>
+              </div>
+              <!-- Telegram -->
+              <div class="mb-4">
+                <label class="form-label fw-semibold">Telegram</label>
+                {{ form.telegram }}
+                <small class="text-muted">@username или https://t.me/username</small>
+              </div>
+              <!-- Кнопки -->
+              <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary flex-grow-1">
+                  <i class="bi bi-check-circle me-2"></i>Сохранить изменения
+                </button>
+                <a href="{% url 'core:profile' username=request.user.username %}"
+                   class="btn btn-outline-secondary">Отмена</a>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+// Предпросмотр аватарки
+document.getElementById('id_avatar').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            const preview = document.getElementById('avatarPreview');
+            if (preview.tagName === 'IMG') {
+                preview.src = ev.target.result;
+            } else {
+                const newImg = document.createElement('img');
+                newImg.src = ev.target.result;
+                newImg.className = 'rounded-circle border border-2 border-primary mb-3';
+                newImg.width = 120;
+                newImg.height = 120;
+                newImg.id = 'avatarPreview';
+                preview.parentNode.replaceChild(newImg, preview);
+            }
+        };
+        reader.readAsDataURL(file);
+    }
+});
+  </script>
+{% endblock %}

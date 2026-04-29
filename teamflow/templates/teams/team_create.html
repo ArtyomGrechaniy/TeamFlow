@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Создать новую команду — TeamFlow{% endblock %}
+{% block content %}
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-lg-7">
+        <div class="card shadow-sm">
+          <!-- Заголовок карточки -->
+          <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">
+              <i class="bi bi-people-fill me-2"></i>
+              Создать новую команду
+            </h4>
+          </div>
+          <div class="card-body p-4">
+            <form method="post">
+              {% csrf_token %}
+              <!-- Поля формы -->
+              {% for field in form %}
+                <div class="mb-3">
+                  {{ field.label_tag }}
+                  {{ field }}
+                  {% if field.help_text %}<small class="text-muted">{{ field.help_text }}</small>{% endif %}
+                  {% if field.errors %}<div class="text-danger small mt-1">{{ field.errors }}</div>{% endif %}
+                </div>
+              {% endfor %}
+              <!-- Кнопки -->
+              <div class="d-flex gap-2 mt-4">
+                <button type="submit" class="btn btn-primary flex-grow-1">
+                  <i class="bi bi-plus-circle me-2"></i>
+                  Создать команду
+                </button>
+                <a href="{% url 'teams:list' %}" class="btn btn-outline-secondary">Отмена</a>
+              </div>
+            </form>
+          </div>
+        </div>
+        <!-- Подсказка снизу -->
+        <div class="text-center mt-4">
+          <small class="text-muted">После создания вы автоматически станете владельцем команды</small>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

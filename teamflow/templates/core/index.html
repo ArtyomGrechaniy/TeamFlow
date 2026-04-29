@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+{% block title %}TeamFlow — Управление командами, расходами и задачами{% endblock %}
+{% block content %}
+  <div class="container py-5">
+    <!-- Герой-секция -->
+    <div class="row align-items-center py-5">
+      <div class="col-lg-6">
+        <h1 class="display-4 fw-bold mb-4">
+          Управляйте командой
+          <br>
+          <span class="text-primary">эффективно</span>
+        </h1>
+        <p class="lead text-muted mb-4">
+          TeamFlow — удобный инструмент для командной работы:
+          расходы, задачи, участники и статистика в одном месте.
+        </p>
+        <div class="d-flex flex-wrap gap-3">
+          {% if user.is_authenticated %}
+            <a href="{% url 'core:profile' username=user.username %}"
+               class="btn btn-primary btn-lg px-4">
+              <i class="bi bi-person-circle me-2"></i>Мой профиль
+            </a>
+            <a href="{% url 'teams:team_list' %}"
+               class="btn btn-outline-primary btn-lg px-4">
+              <i class="bi bi-people me-2"></i>Мои команды
+            </a>
+          {% else %}
+            <a href="{% url 'core:register' %}" class="btn btn-primary btn-lg px-4">
+              <i class="bi bi-person-plus me-2"></i>Начать
+            </a>
+            <a href="{% url 'core:login' %}"
+               class="btn btn-outline-primary btn-lg px-4">Войти</a>
+          {% endif %}
+        </div>
+      </div>
+      <div class="col-lg-6 mt-5 mt-lg-0 text-center">
+        <img src="https://picsum.photos/id/1015/600/400"
+             class="img-fluid rounded-4 shadow-lg"
+             alt="TeamFlow">
+      </div>
+    </div>
+    <!-- Преимущества -->
+    <div class="row py-5">
+      <div class="col-12 text-center mb-5">
+        <h2 class="fw-bold">Что может TeamFlow?</h2>
+      </div>
+      <div class="col-md-4 mb-4">
+        <div class="card h-100 border-0 shadow-sm">
+          <div class="card-body text-center p-4">
+            <div class="display-4 text-primary mb-3">💰</div>
+            <h5>Контроль расходов</h5>
+            <p class="text-muted">
+              Ведите учёт расходов как лично, так и по команде.
+              Прозрачная статистика и аналитика.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4 mb-4">
+        <div class="card h-100 border-0 shadow-sm">
+          <div class="card-body text-center p-4">
+            <div class="display-4 text-success mb-3">✅</div>
+            <h5>Управление задачами</h5>
+            <p class="text-muted">
+              Создавайте задачи, назначайте исполнителей,
+              следите за дедлайнами и просрочками.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4 mb-4">
+        <div class="card h-100 border-0 shadow-sm">
+          <div class="card-body text-center p-4">
+            <div class="display-4 text-info mb-3">👥</div>
+            <h5>Командная работа</h5>
+            <p class="text-muted">
+              Приглашайте участников, распределяйте роли
+              (владелец, админ, участник) и управляйте доступом.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Призыв к действию -->
+    <div class="bg-primary text-white rounded-4 p-5 text-center mt-4">
+      <h2 class="fw-bold mb-3">Готовы начать?</h2>
+      {% if not user.is_authenticated %}
+        <a href="{% url 'core:register' %}" class="btn btn-light btn-lg px-5">Создать аккаунт бесплатно</a>
+      {% else %}
+        <a href="{% url 'teams:team_create' %}"
+           class="btn btn-light btn-lg px-5">Создать свою команду</a>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}
