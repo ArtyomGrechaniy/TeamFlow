@@ -9,7 +9,7 @@ app_name = 'core'
 accounts_urls = [
     path('register/', views.RegisterView.as_view(), name='register'),
     path('login/', views.CustomLoginView.as_view(), name='login'),
-    path('logout/', LogoutView.as_view(next_page=reverse_lazy('core:login'), http_method_names=['get', 'post']), name='logout'),
+    path('logout/', LogoutView.as_view(next_page=reverse_lazy('core:login'), template_name=('registration/logout.html'), http_method_names=['get', 'post']), name='logout'),
 ]
 
 

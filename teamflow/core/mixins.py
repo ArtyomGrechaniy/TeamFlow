@@ -1,95 +1,68 @@
-from django.contrib.auth.mixins import UserPassesTestMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin, LoginRequiredMixin
 from django.urls import reverse_lazy
+from django.http import Http404
+from django.core.exceptions import PermissionDenied
 
 from teams.models import TeamMember
 
 
-class OnlyAuthorAccessMixin(UserPassesTestMixin):
+class OnlyAuthorAccessMixin(LoginRequiredMixin, UserPassesTestMixin):
     def test_func(self):
         object = self.get_object()
         return object.user == self.request.user
     
 
-class TeamMemberAccessMixin(UserPassesTestMixin):
+class OwnershipMixin:
+    def get_team_id(self):
+        return self.kwargs.get('team_id')
+
+    def assign_ownership(self, instance):
+        team_id = self.get_team_id()
+        
+        instance.team_id = team_id if team_id else None
+        instance.user = self.request.user if not team_id else None
+
+        return instance
+
+
+class TeamAccessMixin(LoginRequiredMixin, UserPassesTestMixin):
+    required_roles = None
+
+    def get_team_id(self):
+        return self.kwargs.get('team_id')
+
+    def has_team_access(self, user, team_id, roles=None):
+        qs = TeamMember.objects.filter(user=user, team_id=team_id)
+
+        if roles:
+            qs = qs.filter(role__in=roles)
+        
+        return qs.exists()
+    
     def test_func(self):
-        obj = self.get_object()
-        user = self.request.user
-
-        if obj.user == user:
-            return True
-        
-        if obj.team:
-            return TeamMember.objects.filter(
-                team=obj.team,
-                user=user
-                ).exists()
-        
-        return False
-
-
-class TeamAdminAccessMixin(UserPassesTestMixin):
-    def test_func(self):
-        obj = self.get_object()
-        user = self.request.user
-
-        if obj.user == user:
+        if self.get_team_id():
+            return self.has_team_access(
+                self.request.user,
+                self.get_team_id(),
+                self.required_roles
+            )
+        else:
             return True
 
-        if obj.team:
-            return TeamMember.objects.filter(
-                team=obj.team,
-                user=user,
-                role__in=['admin', 'owner']
-            ).exists()
-        
-        return False
+    def handle_no_permission(self):
+        raise Http404()
+
+
+class TeamMemberAccessMixin(TeamAccessMixin):
+    pass
+
+
+class TeamAdminAccessMixin(TeamAccessMixin):
+    required_roles = ['admin', 'owner']
     
 
-class TeamAdminCreateAccessMixin(UserPassesTestMixin):
-    def test_func(self):
-        user = self.request.user
-        team_id = self.kwargs.get('team_id')
-
-        if not team_id:
-            return True
-        
-        if team_id:
-            return TeamMember.objects.filter(
-                user=user,
-                team_id=team_id,
-                role__in=['owner','admin']
-            ).exists()
-        
-        return False
-    
-
-class TeamOwnerAccessMixin(UserPassesTestMixin):
-    def test_func(self):
-        obj = self.get_object()
-        user = self.request.user
-
-        if obj.user == user:
-            return True
-
-        if obj.team:
-            return TeamMember.objects.filter(
-                team=obj.team,
-                user=user,
-                role='owner'
-            ).exists()
-        
-        return False
-    
-
-class TeamListAccessMixin(UserPassesTestMixin):
-    def test_func(self):
-        user = self.request.user
-        team_id = self.kwargs.get('team_id')
-
-        if not team_id:
-            return True
-
-        return TeamMember.objects.filter(team_id=team_id, user=user).exists()
+class TeamOwnerAccessMixin(TeamAccessMixin):
+    required_roles = ['owner',]
 
 
 class FormContextMixin:

@@ -3,7 +3,7 @@ from django.urls import reverse_lazy, reverse
 from django.views.generic import ListView, CreateView, DetailView, UpdateView, DeleteView
 from django.db.models import Q
 
-from core.mixins import FormContextMixin, TeamAdminCreateAccessMixin, TeamMemberAccessMixin, TeamAdminAccessMixin, TeamListAccessMixin, DeleteContextMixin
+from core.mixins import FormContextMixin, TeamMemberAccessMixin, TeamAdminAccessMixin, DeleteContextMixin
 from .models import Task, TaskCategory
 from .forms import TaskForm, TaskCategoryForm
 from teams.models import Team, TeamMember
@@ -27,7 +27,7 @@ class TaskMixin(LoginRequiredMixin):
         return kwargs
 
 
-class TaskListView(LoginRequiredMixin, ListView):
+class TaskListView(TeamMemberAccessMixin, ListView):
     model = Task
     template_name = 'tasks/task_list.html'
     context_object_name = 'tasks'
@@ -118,7 +118,7 @@ class TaskListView(LoginRequiredMixin, ListView):
 
 class TaskCreateView(
     TaskMixin,
-    TeamAdminCreateAccessMixin,
+    TeamAdminAccessMixin,
     FormContextMixin,
     CreateView
 ):
@@ -158,7 +158,6 @@ class TaskUpdateView(
 
 
 class TaskDeleteView(
-    LoginRequiredMixin,
     TeamAdminAccessMixin,
     DeleteContextMixin,
     DeleteView
@@ -169,7 +168,7 @@ class TaskDeleteView(
     success_url = reverse_lazy('tasks:task_list')
 
 
-class TaskCategoryListView(LoginRequiredMixin, ListView):
+class TaskCategoryListView(TeamMemberAccessMixin, ListView):
     model = TaskCategory
     template_name = 'tasks/task_category_list.html'
     context_object_name = 'categories'
@@ -188,8 +187,7 @@ class TaskCategoryListView(LoginRequiredMixin, ListView):
 
 
 class TaskCategoryCreateView(
-    LoginRequiredMixin,
-    TeamAdminCreateAccessMixin,
+    TeamAdminAccessMixin,
     FormContextMixin,
     CreateView
 ):
@@ -211,7 +209,6 @@ class TaskCategoryCreateView(
     
 
 class TaskCategoryDeleteView(
-    LoginRequiredMixin,
     TeamAdminAccessMixin,
     DeleteContextMixin,
     DeleteView
@@ -222,7 +219,7 @@ class TaskCategoryDeleteView(
     success_url = reverse_lazy('tasks:task_category_list')
 
 
-class TaskMarkAsDoneView(LoginRequiredMixin, TeamAdminAccessMixin, UpdateView):
+class TaskMarkAsDoneView(TeamAdminAccessMixin, UpdateView):
     model = Task
     fields = []
     http_method_names = ['post']

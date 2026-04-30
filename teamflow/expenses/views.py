@@ -11,9 +11,9 @@ from core.constants import NO_CATEGORY, OTHER_LABEL
 from .forms import ExpenseCategoryForm, ExpenseForm
 from .models import Expense, ExpenseCategory
 from teams.models import Team, TeamMember
-from core.mixins import (FormContextMixin, TeamAdminCreateAccessMixin, 
-                         TeamMemberAccessMixin, TeamAdminAccessMixin, 
-                         TeamListAccessMixin, DeleteContextMixin)
+from core.mixins import (FormContextMixin, TeamMemberAccessMixin, 
+                         TeamAdminAccessMixin, DeleteContextMixin,
+                         OwnershipMixin)
 
 
 # ====================== МИКСИНЫ ======================
@@ -35,7 +35,8 @@ class ExpenseMixin(LoginRequiredMixin):
 
 # ====================== CRUD ======================
 class ExpenseCreateView(
-    TeamAdminCreateAccessMixin,
+    TeamAdminAccessMixin,
+    OwnershipMixin,
     ExpenseMixin,
     FormContextMixin,
     CreateView
@@ -43,16 +44,6 @@ class ExpenseCreateView(
     form_class = ExpenseForm
     template_name = 'core/form.html'
     form_type = 'expense'
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        team_id = self.kwargs.get('team_id')
-        if team_id:
-            kwargs['team_id'] = self.kwargs.get('team_id')
-        else:
-            kwargs['user'] = self.request.user
-        
-        return kwargs
 
 
 class ExpenseUpdateView(
@@ -91,7 +82,6 @@ class ExpenseUpdateView(
 
 
 class ExpenseDeleteView(
-    LoginRequiredMixin,
     TeamAdminAccessMixin,
     DeleteContextMixin,
     DeleteView
@@ -116,7 +106,8 @@ class ExpenseDeleteView(
 
 
 class ExpenseCategoryCreateView(
-    TeamAdminCreateAccessMixin,
+    TeamAdminAccessMixin,
+    OwnershipMixin,
     LoginRequiredMixin,
     FormContextMixin,
     CreateView
@@ -156,7 +147,6 @@ class ExpenseCategoryCreateView(
         
 
 class ExpenseCategoryUpdateView(
-    LoginRequiredMixin,
     TeamAdminAccessMixin,
     FormContextMixin,
     UpdateView
@@ -195,7 +185,7 @@ class ExpenseDetailView(ExpenseMixin, TeamMemberAccessMixin, DetailView):
     context_object_name = 'expense'
 
 
-class ExpenseListView(LoginRequiredMixin, TeamListAccessMixin, ListView):
+class ExpenseListView(TeamMemberAccessMixin, ListView):
     model = Expense
     template_name = 'expenses/expense_list.html'
     context_object_name = 'expenses'
@@ -252,7 +242,7 @@ class ExpenseListView(LoginRequiredMixin, TeamListAccessMixin, ListView):
         return context
 
 
-class ExpenseCategoryListView(TeamListAccessMixin, ListView):
+class ExpenseCategoryListView(TeamMemberAccessMixin, ListView):
     model = ExpenseCategory
     template_name = 'expenses/expense_category_list.html'
     context_object_name = 'categories'
@@ -263,67 +253,3 @@ class ExpenseCategoryListView(TeamListAccessMixin, ListView):
             expense_count=Count('expenses'),
             total_amount=Sum('expenses__amount_rub')
         ).order_by('name')
-
-
-class StatisticsView(ExpenseMixin, TemplateView):
-    template_name = 'expenses/statistics.html'
-    
-    TOP_CATEGORIES = 10
-    TOP_EXPENSES = 5
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        expenses = self.get_queryset()
-
-        context['total_all_time'] = expenses.aggregate(Sum('amount'))['amount__sum'] or 0
-        context['total_this_month'] = expenses.filter(
-            date__month=timezone.now().month,
-            date__year=timezone.now().year
-        ).aggregate(Sum('amount'))['amount__sum'] or 0
-
-        by_category_qs = (
-            expenses.values('category__name')
-            .annotate(total=Sum('amount'))
-            .order_by('-total')
-        )
-        
-        by_category_list = list(by_category_qs)
-
-        top_10 = by_category_list[:self.TOP_CATEGORIES]
-        rest = by_category_list[self.TOP_CATEGORIES:]
-
-        rest_total = sum(item['total'] for item in rest)
-
-        color_iter = iter(COLORS.values())
-
-        for item in top_10:
-            if item['category__name'] is None:
-                item['category__name'] = NO_CATEGORY
-            item['color'] = next(color_iter, OTHER_COLOR)
-        
-        if rest_total > 0:
-            top_10.append({
-                    'category__name': OTHER_LABEL,
-                    'total': rest_total,
-                    'color': OTHER_COLOR
-            })
-         
-        context['by_category'] = top_10
-
-        total = context['total_all_time']
-
-        for item in context['by_category']:
-            item['percentage'] = round((item['total'] / total * 100), 1) if total else 0
-
-        top_expenses = (
-            expenses
-            .select_related('category')
-            .order_by('-amount')[:self.TOP_EXPENSES]
-        )
-
-        for expense in top_expenses:
-            cat = getattr(expense, 'category', None)
-            expense.category_color = getattr(cat, 'color', None) or OTHER_COLOR
-
-        context['top_expenses'] = top_expenses
-        return context

@@ -2,7 +2,6 @@ from django.contrib.auth import get_user_model, login
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView, LogoutView
 from django.db.models import Count, Q, Sum
-from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
 from django.views.generic import CreateView, TemplateView, UpdateView, DetailView
@@ -187,8 +186,9 @@ class CustomLoginView(LoginView):
     redirect_authenticated_user = True
     authentication_form = LoginForm
 
+    def get_success_url(self):
+        return reverse_lazy('core:profile', kwargs={'username': self.request.user.username})
+
 
 class HomeView(TemplateView):
     template_name = 'core/index.html'
-
-
