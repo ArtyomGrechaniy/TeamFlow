@@ -1,199 +1,204 @@
 {% extends 'base.html' %}
 {% block title %}Задачи{% endblock %}
 {% block content %}
-  <div class="container py-5">
-    <!-- Заголовок + кнопка создания -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <h1 class="h3 mb-0">
-        <i class="bi bi-list-task me-2"></i>Задачи
-      </h1>
-      <div class="btn-group">
+<div class="container py-5">
+  <!-- Заголовок + кнопка создания -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">
+      <i class="bi bi-list-task me-2"></i>Задачи
+    </h1>
+    <div class="btn-group">
+      {% if current_team %}
+      <a href="{% url 'teams:tasks:category_list' team_id=current_team.id %}"
+        class="btn btn-outline-secondary btn-lg">
+      <i class="bi bi-tags me-2"></i>Категории
+      </a>
+      <a href="{% url 'teams:tasks:task_create' team_id=current_team.id %}"
+        class="btn btn-primary btn-lg">
+      <i class="bi bi-plus-circle me-2"></i>Добавить задачу
+      </a>
+      {% else %}
+      <a href="{% url 'tasks:category_list' %}"
+        class="btn btn-outline-secondary btn-lg">
+      <i class="bi bi-tags me-2"></i>Категории
+      </a>
+      <a href="{% url 'tasks:task_create' %}" class="btn btn-primary btn-lg">
+      <i class="bi bi-plus-circle me-2"></i>Добавить задачу
+      </a>
+      {% endif %}
+    </div>
+  </div>
+  <!-- ==================== ФИЛЬТРЫ ==================== -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <form method="get" id="filterForm" class="row g-3 align-items-end">
+        <!-- Статус -->
+        <div class="col-md-2">
+          <label class="form-label">Статус</label>
+          <select name="status" class="form-select">
+            <option value="">Все</option>
+            {% for code, name in task_status_choices %}
+            <option value="{{ code }}" {% if request.GET.status == code|stringformat:"s" %}selected{% endif %}>
+            {{ name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <!-- Приоритет -->
+        <div class="col-md-2">
+          <label class="form-label">Приоритет</label>
+          <select name="priority" class="form-select">
+            <option value="">Все</option>
+            {% for code, name in task_priority_choices %}
+            <option value="{{ code }}" {% if request.GET.priority == code|stringformat:"s" %}selected{% endif %}>
+            {{ name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <!-- Категория -->
+        <div class="col-md-3">
+          <label class="form-label">Категория</label>
+          <select name="category" class="form-select">
+            <option value="">Все</option>
+            {% for cat in all_categories %}
+            <option value="{{ cat.id }}" {% if request.GET.category == cat.id|stringformat:"s" %}selected{% endif %}>
+            {{ cat.name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <!-- Исполнитель -->
         {% if current_team %}
-          <a href="{% url 'teams:tasks:category_list' team_id=current_team.id %}"
-             class="btn btn-outline-secondary btn-lg">
-            <i class="bi bi-tags me-2"></i>Категории
-          </a>
-          <a href="{% url 'teams:tasks:task_create' team_id=current_team.id %}"
-             class="btn btn-primary btn-lg">
-            <i class="bi bi-plus-circle me-2"></i>Добавить задачу
-          </a>
-        {% else %}
-          <a href="{% url 'tasks:category_list' %}"
-             class="btn btn-outline-secondary btn-lg">
-            <i class="bi bi-tags me-2"></i>Категории
-          </a>
-          <a href="{% url 'tasks:task_create' %}" class="btn btn-primary btn-lg">
-            <i class="bi bi-plus-circle me-2"></i>Добавить задачу
-          </a>
+        <div class="col-md-2">
+          <label class="form-label">Исполнитель</label>
+          <select name="assigned_to" class="form-select">
+            <option value="">Все</option>
+            {% for member in team_members %}
+            <option value="{{ member.id }}" {% if request.GET.assigned_to == member.id|stringformat:"s" %}selected{% endif %}>
+            {{ member.get_full_name|default:member.username }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
         {% endif %}
-      </div>
-    </div>
-    <!-- ==================== ФИЛЬТРЫ ==================== -->
-    <div class="card shadow-sm mb-4">
-      <div class="card-body">
-        <form method="get" id="filterForm" class="row g-3 align-items-end">
-          <!-- Статус -->
-          <div class="col-md-2">
-            <label class="form-label">Статус</label>
-            <select name="status" class="form-select" onchange="this.form.submit()">
-              <option value="">Все</option>
-              {% for code, name in task_status_choices %}
-                <option value="{{ code }}"
-                        {% if request.GET.status == code %}selected{% endif %}>{{ name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <!-- Приоритет -->
-          <div class="col-md-2">
-            <label class="form-label">Приоритет</label>
-            <select name="priority" class="form-select" onchange="this.form.submit()">
-              <option value="">Все</option>
-              {% for code, name in task_priority_choices %}
-                <option value="{{ code }}"
-                        {% if request.GET.priority == code %}selected{% endif %}>{{ name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <!-- Категория -->
-          <div class="col-md-3">
-            <label class="form-label">Категория</label>
-            <select name="category" class="form-select" onchange="this.form.submit()">
-              <option value="">Все</option>
-              {% for cat in all_categories %}
-                <option value="{{ cat.id }}"
-                        {% if request.GET.category == cat.id|stringformat:'s' %}selected{% endif %}>
-                  {{ cat.name }}
-                </option>
-              {% endfor %}
-            </select>
-          </div>
-          <!-- Исполнитель (только если есть current_team) -->
-          {% if current_team %}
-            <div class="col-md-2">
-              <label class="form-label">Исполнитель</label>
-              <select name="assigned_to" class="form-select" onchange="this.form.submit()">
-                <option value="">Все</option>
-                {% for member in team_members %}
-                  <option value="{{ member.id }}"
-                          {% if request.GET.assigned_to == member.id|stringformat:'s' %}selected{% endif %}>
-                    {{ member.get_full_name|default:member.username }}
-                  </option>
-                {% endfor %}
-              </select>
-            </div>
-          {% endif %}
-          <!-- Только просроченные -->
-          <div class="col-md-2">
-            <div class="form-check mt-4">
-              <input class="form-check-input"
-                     type="checkbox"
-                     name="overdue"
-                     value="true"
-                     {% if request.GET.overdue == 'true' %}checked{% endif %}
-                     onchange="this.form.submit()">
-              <label class="form-check-label">Только просроченные</label>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
-    <!-- ==================== ТАБЛИЦА ЗАДАЧ ==================== -->
-    {% if tasks %}
-      <div class="card shadow-sm">
-        <div class="card-body p-0">
-          <div class="table-responsive">
-            <table class="table table-hover mb-0">
-              <thead class="table-light">
-                <tr>
-                  <th>Задача</th>
-                  <th>Статус</th>
-                  <th>Приоритет</th>
-                  {% if current_team %}<th>Исполнитель</th>{% endif %}
-                  <th>Дедлайн</th>
-                  <th>Категория</th>
-                  <th class="text-center">Действия</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for task in tasks %}
-                  <tr style="cursor: pointer">
-                    <td>
-                      <div class="fw-semibold">{{ task.title }}</div>
-                      {% if task.description %}<small class="text-muted">{{ task.description|truncatechars:60 }}</small>{% endif %}
-                    </td>
-                    <td>
-                      <span class="badge {% if task.status == 'done' %}bg-success{% elif task.status == 'in_progress' %}bg-warning text-dark{% elif task.status == 'archived' %}bg-secondary{% else %}bg-primary{% endif %}">
-                        {{ task.get_status_display }}
-                      </span>
-                    </td>
-                    <td>
-                      <span class="badge {% if task.priority == 'urgent' %}bg-danger{% elif task.priority == 'high' %}bg-warning text-dark{% elif task.priority == 'medium' %}bg-info{% else %}bg-success{% endif %}">
-                        {{ task.get_priority_display }}
-                      </span>
-                    </td>
-                    {% if current_team %}
-                      <td>
-                        {% if task.assigned_to %}
-                          {{ task.assigned_to.get_full_name|default:task.assigned_to.username }}
-                        {% else %}
-                          <span class="text-muted">—</span>
-                        {% endif %}
-                      </td>
-                    {% endif %}
-                    <td>
-                      {% if task.deadline %}
-                        {% if task.is_overdue %}
-                          <span class="text-danger fw-bold"><i class="bi bi-exclamation-triangle-fill me-1"></i>{{ task.deadline|date:"d.m.Y" }}</span>
-                        {% else %}
-                          {{ task.deadline|date:"d.m.Y" }}
-                        {% endif %}
-                      {% else %}
-                        <span class="text-muted">—</span>
-                      {% endif %}
-                    </td>
-                    <td>
-                      {% if task.category %}
-                        <span class="badge bg-light text-dark">{{ task.category.name }}</span>
-                      {% else %}
-                        <span class="text-muted">—</span>
-                      {% endif %}
-                    </td>
-                    <td class="text-center">
-                      {% if task.status != 'done' %}
-                        <form method="post"
-                              action="{% if current_team %}{% url 'teams:tasks:task_mark_done' team_id=current_team.id pk=task.pk %}{% else %}{% url 'tasks:task_mark_done' task.pk %}{% endif %}"
-                              style="display: inline">
-                          {% csrf_token %}
-                          <button type="submit"
-                                  class="btn btn-sm btn-success me-1"
-                                  title="Отметить как выполненную">✓</button>
-                        </form>
-                      {% endif %}
-                      <a href="{% if current_team %}{% url 'teams:tasks:task_update' team_id=current_team.id pk=task.pk %}{% else %}{% url 'tasks:task_update' task.pk %}{% endif %}"
-                         class="btn btn-sm btn-outline-secondary me-1">✏️</a>
-                      <a href="{% if current_team %}{% url 'teams:tasks:task_delete' team_id=current_team.id pk=task.pk %}{% else %}{% url 'tasks:task_delete' task.pk %}{% endif %}"
-                         class="btn btn-sm btn-outline-danger">🗑</a>
-                    </td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
+        <!-- Только просроченные -->
+        <div class="col-md-2">
+          <div class="form-check mt-4">
+            <input class="form-check-input"
+            type="checkbox"
+            name="overdue"
+            value="true"
+            {% if request.GET.overdue == "true" %}checked{% endif %}>
+            <label class="form-check-label">Просроченные</label>
           </div>
         </div>
-      </div>
-      {% if is_paginated %}
-        <div class="mt-4">{% include 'core/pagination.html' %}</div>
-      {% endif %}
-    {% else %}
-      <div class="text-center py-5">
-        <i class="bi bi-list-task" style="font-size: 5rem; color: #6c757d;"></i>
-        <h4 class="text-muted mt-3">Задач пока нет</h4>
-        <p class="text-muted">Создайте первую задачу, чтобы начать работу</p>
-        <a href="{% if current_team %}{% url 'teams:tasks:task_create' team_id=current_team.id %}{% else %}{% url 'tasks:task_create' %}{% endif %}"
-           class="btn btn-success mt-2">
-          <i class="bi bi-plus-circle me-2"></i>Создать первую задачу
-        </a>
-      </div>
-    {% endif %}
+        <!-- КНОПКА -->
+        <div class="col-md-1">
+          <button type="submit" class="btn btn-primary w-100">OK</button>
+        </div>
+      </form>
+    </div>
   </div>
+  <!-- ==================== ТАБЛИЦА ЗАДАЧ ==================== -->
+  {% if tasks %}
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Задача</th>
+              <th>Статус</th>
+              <th>Приоритет</th>
+              {% if current_team %}
+              <th>Исполнитель</th>
+              {% endif %}
+              <th>Дедлайн</th>
+              <th>Категория</th>
+              <th class="text-center">Действия</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for task in tasks %}
+            <tr style="cursor: pointer">
+              <td>
+                <div class="fw-semibold">{{ task.title }}</div>
+                {% if task.description %}<small class="text-muted">{{ task.description|truncatechars:60 }}</small>{% endif %}
+              </td>
+              <td>
+                <span class="badge {% if task.status == 'done' %}bg-success{% elif task.status == 'in_progress' %}bg-warning text-dark{% elif task.status == 'archived' %}bg-secondary{% else %}bg-primary{% endif %}">
+                {{ task.get_status_display }}
+                </span>
+              </td>
+              <td>
+                <span class="badge {% if task.priority == 'urgent' %}bg-danger{% elif task.priority == 'high' %}bg-warning text-dark{% elif task.priority == 'medium' %}bg-info{% else %}bg-success{% endif %}">
+                {{ task.get_priority_display }}
+                </span>
+              </td>
+              {% if current_team %}
+              <td>
+                {% if task.assigned_to %}
+                {{ task.assigned_to.get_full_name|default:task.assigned_to.username }}
+                {% else %}
+                <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+              {% endif %}
+              <td>
+                {% if task.deadline %}
+                {% if task.is_overdue %}
+                <span class="text-danger fw-bold"><i class="bi bi-exclamation-triangle-fill me-1"></i>{{ task.deadline|date:"d.m.Y" }}</span>
+                {% else %}
+                {{ task.deadline|date:"d.m.Y" }}
+                {% endif %}
+                {% else %}
+                <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if task.category %}
+                <span class="badge bg-light text-dark">{{ task.category.name }}</span>
+                {% else %}
+                <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+              <td class="text-center">
+                {% if task.status != 'done' %}
+                <form method="post"
+                  action="{% if current_team %}{% url 'teams:tasks:task_mark_done' team_id=current_team.id pk=task.pk %}{% else %}{% url 'tasks:task_mark_done' task.pk %}{% endif %}"
+                  style="display: inline">
+                  {% csrf_token %}
+                  <button type="submit"
+                    class="btn btn-sm btn-success me-1"
+                    title="Отметить как выполненную">✓</button>
+                </form>
+                {% endif %}
+                <a href="{% if current_team %}{% url 'teams:tasks:task_update' team_id=current_team.id pk=task.pk %}{% else %}{% url 'tasks:task_update' task.pk %}{% endif %}"
+                  class="btn btn-sm btn-outline-secondary me-1">✏️</a>
+                <a href="{% if current_team %}{% url 'teams:tasks:task_delete' team_id=current_team.id pk=task.pk %}{% else %}{% url 'tasks:task_delete' task.pk %}{% endif %}"
+                  class="btn btn-sm btn-outline-danger">🗑</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% if is_paginated %}
+  <div class="mt-4">{% include 'core/pagination.html' %}</div>
+  {% endif %}
+  {% else %}
+  <div class="text-center py-5">
+    <i class="bi bi-list-task" style="font-size: 5rem; color: #6c757d;"></i>
+    <h4 class="text-muted mt-3">Задач пока нет</h4>
+    <p class="text-muted">Создайте первую задачу, чтобы начать работу</p>
+    <a href="{% if current_team %}{% url 'teams:tasks:task_create' team_id=current_team.id %}{% else %}{% url 'tasks:task_create' %}{% endif %}"
+      class="btn btn-success mt-2">
+    <i class="bi bi-plus-circle me-2"></i>Создать первую задачу
+    </a>
+  </div>
+  {% endif %}
+</div>
 {% endblock %}
