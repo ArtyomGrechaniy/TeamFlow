@@ -15,8 +15,5 @@ accounts_urls = [
 
 urlpatterns = [
     path('accounts/', include(accounts_urls)),
-    path('<str:username>/profile/', views.ProfileView.as_view(), name='profile'),
-    path('profile/statistic', views.ProfileStatisticsView.as_view(), name='profile_statistic'),
-    path('profile/edit/', views.ProfileUpdateView.as_view(), name='profile_edit'),
     path('', views.HomeView.as_view(), name='home'),
 ]

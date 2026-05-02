@@ -22,7 +22,7 @@
           {% if user.is_authenticated %}
             <li class="nav-item">
               <a class="nav-link {% if request.resolver_match.url_name == 'profile' %}active{% endif %}"
-                 href="{% url 'core:profile' username=user.username %}">
+                 href="{% url 'profile:profile' username=user.username %}">
                 <i class="bi bi-house-door me-1"></i>Профиль
               </a>
             </li>
@@ -67,7 +67,7 @@
                   aria-labelledby="userDropdown">
                 <li>
                   <a class="dropdown-item"
-                     href="{% url 'core:profile' username=user.username %}">
+                     href="{% url 'profile:profile' username=user.username %}">
                     <i class="bi bi-person me-2"></i>Мой профиль
                   </a>
                 </li>
