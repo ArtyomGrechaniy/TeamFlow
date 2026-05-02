@@ -16,7 +16,7 @@
         </p>
         <div class="d-flex flex-wrap gap-3">
           {% if user.is_authenticated %}
-            <a href="{% url 'core:profile' username=user.username %}"
+            <a href="{% url 'profile:profile' username=user.username %}"
                class="btn btn-primary btn-lg px-4">
               <i class="bi bi-person-circle me-2"></i>Мой профиль
             </a>
@@ -25,10 +25,10 @@
               <i class="bi bi-people me-2"></i>Мои команды
             </a>
           {% else %}
-            <a href="{% url 'core:register' %}" class="btn btn-primary btn-lg px-4">
+            <a href="{% url 'accounts:register' %}" class="btn btn-primary btn-lg px-4">
               <i class="bi bi-person-plus me-2"></i>Начать
             </a>
-            <a href="{% url 'core:login' %}"
+            <a href="{% url 'accounts:login' %}"
                class="btn btn-outline-primary btn-lg px-4">Войти</a>
           {% endif %}
         </div>

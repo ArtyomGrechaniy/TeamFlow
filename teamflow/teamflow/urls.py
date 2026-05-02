@@ -9,6 +9,7 @@ urlpatterns = [
     path('tasks/', include('tasks.urls')),
     path('teams/', include('teams.urls')),
     path('profiles/', include('profiles.urls')),
+    path('accounts/', include('accounts.urls')),
     path('admin/', admin.site.urls),
     path('', include('core.urls')),
 ]

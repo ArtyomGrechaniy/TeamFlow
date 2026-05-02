@@ -75,7 +75,7 @@
                   <hr class="dropdown-divider">
                 </li>
                 <li>
-                  <a class="dropdown-item text-danger" href="{% url 'core:logout' %}">
+                  <a class="dropdown-item text-danger" href="{% url 'accounts:logout' %}">
                     <i class="bi bi-box-arrow-right me-2"></i>Выйти
                   </a>
                 </li>
@@ -83,10 +83,10 @@
             </li>
           {% else %}
             <li class="nav-item">
-              <a class="nav-link" href="{% url 'core:login' %}">Войти</a>
+              <a class="nav-link" href="{% url 'accounts:login' %}">Войти</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="{% url 'core:register' %}">Регистрация</a>
+              <a class="nav-link" href="{% url 'accounts:register' %}">Регистрация</a>
             </li>
           {% endif %}
         </ul>
