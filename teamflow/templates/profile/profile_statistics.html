@@ -103,7 +103,7 @@
             <div class="card bg-light border-0 h-100">
               <div class="card-body text-center">
                 <div class="text-muted small">Команд</div>
-                <div class="h4 fw-bold text-info mt-2">{{ teams_count|default:0 }}</div>
+                <div class="h4 fw-bold text-info mt-2">{{ user_teams.count|default:0 }}</div>
               </div>
             </div>
           </div>
@@ -139,29 +139,32 @@
               <span class="text-muted small">Всего: {{ total_expenses_amount|floatformat:0 }} ₽</span>
             </div>
           </div>
+          <div class="card shadow-sm mb-5 expenses-card">
           {% for item in by_category %}
             <div class="mb-3">
               <div class="d-flex justify-content-between align-items-center mb-1">
                 <div></div>
                 <div class="text-end">
-                  <span class="fw-semibold">{{ item.total|floatformat:0 }} ₽</span>
+                  <span class="fw-semibold">{{item.category__name}} - {{ item.total|floatformat:0 }} ₽</span>
                   <small class="text-muted ms-1">({{ item.percent }}%)</small>
                 </div>
               </div>
               <!-- Прогресс-бар -->
-              <div class="progress" style="height: 8px; background-color: #f1f1f1;">
-                <div class="progress-bar"
-                     style="width: {{ item.percentage }}%;
-                            background-color: {{ item.color }}"></div>
-              </div>
+              <div class="progress" style="height: 8px;">
+    <div class="progress-bar"
+         style="width: {{ item.percent }}%; background-color: {{ item.color|default:'#0d6efd' }}">
+    </div>
+</div>
             </div>
           {% endfor %}
+          </div>
         {% else %}
           <div class="text-center py-4">
             <i class="bi bi-wallet2 text-muted" style="font-size: 3rem;"></i>
             <p class="text-muted mt-2 mb-0">Пока нет данных о расходах</p>
           </div>
         {% endif %}
+        
       </div>
     </div>
     <!-- ==================== ЗАДАЧИ ==================== -->
@@ -296,9 +299,9 @@
                       <strong>{{ membership.team }}</strong>
                     </td>
                     <td>
-                      {% if team.role == 'owner' %}
+                      {% if membership.role == 'owner' %}
                         <span class="badge bg-danger">Владелец</span>
-                      {% elif team.role == 'admin' %}
+                      {% elif membership.role == 'admin' %}
                         <span class="badge bg-warning text-dark">Администратор</span>
                       {% else %}
                         <span class="badge bg-secondary">Участник</span>
@@ -378,26 +381,5 @@
     </div>
   </div>
   {% block extra_js %}
-    <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Прогресс-бары расходов
-    document.querySelectorAll('.progress-bar').forEach(function(bar) {
-        // Получаем процент из атрибута style или data-percent
-        let width = parseFloat(bar.style.width) || parseFloat(bar.dataset.percent) || 0;
-        bar.style.width = '0%'; // стартовая позиция для анимации
-        bar.style.transition = 'width 1s ease-in-out';
-
-        // Цвет можно задать через data-color или оставить существующий
-        if (bar.dataset.color) {
-            bar.style.backgroundColor = bar.dataset.color;
-        }
-
-        // Анимация: устанавливаем ширину через setTimeout, чтобы сработал transition
-        setTimeout(() => {
-            bar.style.width = width + '%';
-        }, 50);
-    });
-});
-    </script>
   {% endblock %}
 {% endblock %}
