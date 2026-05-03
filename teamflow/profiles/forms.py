@@ -18,11 +18,12 @@ class ProfileForm(forms.ModelForm):
 
     class Meta:
         model = Profile
-        fields = ['avatar', 'bio', 'github_url', 'telegram']
+        fields = ['avatar', 'bio', 'github_url', 'telegram', 'is_statistics_public']
         widgets = {
             'bio': forms.Textarea(attrs={'class': 'form-control', 'rows': 5}),
             'github_url': forms.URLInput(attrs={'class': 'form-control', 'placeholder': 'https://github.com/username'}),
             'telegram': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '@username или https://t.me/...'}),
+            'is_statistics_public': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
     def __init__(self, *args, **kwargs):

@@ -1,6 +1,8 @@
 from django.contrib.auth import get_user_model
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.mixins import AccessMixin, LoginRequiredMixin
+from django.core.exceptions import PermissionDenied
 from django.db.models import Count, Q, Sum
+from django.shortcuts import get_object_or_404
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views.generic import TemplateView, UpdateView, DetailView
@@ -14,8 +16,6 @@ from .forms import ProfileForm
 from .models import Profile
 
 User = get_user_model()
-
-today = timezone.now().date()
 
 TODO_STATUS = Task.Status.TODO
 IN_PROGRESS_STATUS = Task.Status.IN_PROGRESS
@@ -41,14 +41,42 @@ class ProfileView(DetailView):
         return context
 
 
-class ProfileStatisticsView(LoginRequiredMixin, TemplateView):
+class ProfileStatisticsView(AccessMixin, TemplateView):
     template_name = 'profile/profile_statistics.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        username = kwargs.get('username')
+
+        if username:
+            self.profile = get_object_or_404(
+                Profile.objects.select_related('user'),
+                user__username=username
+            )
+        else:
+            if not request.user.is_authenticated:
+                return self.handle_no_permission()
+            self.profile, _ = Profile.objects.get_or_create(user=request.user)
+
+        self.statistics_user = self.profile.user
+        self.is_owner = (
+            request.user.is_authenticated
+            and request.user == self.statistics_user
+        )
+
+        if not self.is_owner and not self.profile.is_statistics_public:
+            raise PermissionDenied
+
+        return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        user = self.request.user
+        user = self.statistics_user
+        today = timezone.now().date()
         user_teams = TeamMember.objects.filter(user=user).values_list('team', flat=True)
-        base_filter = Q(user=user) | Q(team__in=user_teams)
+        base_filter = Q(user=user)
+
+        if self.is_owner:
+            base_filter |= Q(team__in=user_teams)
 
         tasks = Task.objects.filter(base_filter)
 
@@ -140,6 +168,10 @@ class ProfileStatisticsView(LoginRequiredMixin, TemplateView):
 
         context['by_category'] = top_10
         
+        context['profile'] = self.profile
+        context['statistics_user'] = user
+        context['is_owner'] = self.is_owner
+        context['teams_count'] = user_teams.count() if self.is_owner else 0
         context['user_teams'] = TeamMember.objects.filter(user=user).select_related('team').annotate(
             count=Count('team'),
             tasks_count=Count('team__tasks'),
@@ -151,7 +183,7 @@ class ProfileStatisticsView(LoginRequiredMixin, TemplateView):
                     team__tasks__status__in=[TODO_STATUS, IN_PROGRESS_STATUS]
                 )
             )
-        )
+        ) if self.is_owner else TeamMember.objects.none()
 
         return context
 

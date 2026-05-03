@@ -9,9 +9,9 @@
         <div class="d-flex flex-column flex-md-row align-items-center mb-4">
           <!-- Аватарка -->
           <div class="me-md-4 mb-3 mb-md-0">
-            {% if user.profile.avatar %}
+            {% if profile.avatar %}
               <!-- Реальная аватарка пользователя -->
-              <img src="{{ user.profile.avatar.url }}"
+              <img src="{{ profile.avatar.url }}"
                    class="rounded-circle border border-3 border-primary shadow-sm"
                    width="120"
                    height="120"
@@ -22,19 +22,19 @@
                    style="width: 120px;
                           height: 120px;
                           font-size: 2.5rem">
-                {{ user.profile.avatar_initials|default:user.username|slice:":2"|upper }}
+                {{ profile.avatar_initials|default:statistics_user.username|slice:":2"|upper }}
               </div>
             {% endif %}
           </div>
           <!-- Информация о пользователе -->
           <div class="flex-grow-1">
-            <h2 class="mb-1">{{ user.get_full_name|default:user.username }}</h2>
-            <p class="text-muted mb-2">@{{ user.username }}</p>
+            <h2 class="mb-1">{{ statistics_user.get_full_name|default:statistics_user.username }}</h2>
+            <p class="text-muted mb-2">@{{ statistics_user.username }}</p>
             <div class="d-flex flex-wrap gap-3">
               <div>
                 <small class="text-muted">В системе с</small>
                 <br>
-                <strong>{{ user.date_joined|date:"d F Y" }}</strong>
+                <strong>{{ statistics_user.date_joined|date:"d F Y" }}</strong>
               </div>
               <div>
                 <small class="text-muted">Участник команд</small>
@@ -44,6 +44,7 @@
             </div>
           </div>
           <!-- Кнопки быстрых действий -->
+          {% if is_owner %}
           <div class="d-flex flex-column gap-2 mt-3 mt-md-0">
             <a href="{% url 'expenses:expense_create' %}" class="btn btn-primary">
               <i class="bi bi-plus-circle me-2"></i>Добавить расход
@@ -52,6 +53,7 @@
               <i class="bi bi-plus-circle me-2"></i>Добавить задачу
             </a>
           </div>
+          {% endif %}
         </div>
         <hr class="my-4">
         <!-- === ОБЩАЯ СТАТИСТИКА === -->
@@ -121,11 +123,10 @@
     </div>
     <!-- ==================== РАСХОДЫ ==================== -->
     <div class="card shadow-sm mb-5"
-         onclick="window.location='{% url 'expenses:expense_list' %}'"
-         style="cursor: pointer;
-                transition: transform 0.2s, box-shadow 0.2s"
+         {% if is_owner %}onclick="window.location='{% url 'expenses:expense_list' %}'"
+         style="cursor: pointer; transition: transform 0.2s, box-shadow 0.2s"
          onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 15px rgba(0,0,0,0.1)'"
-         onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow=''">
+         onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow=''"{% endif %}>
       <div class="card-header bg-primary text-white">
         <h5 class="mb-0">
           <i class="bi bi-wallet2 me-2"></i>Расходы
@@ -169,11 +170,10 @@
     </div>
     <!-- ==================== ЗАДАЧИ ==================== -->
     <div class="card shadow-sm mb-5"
-         onclick="window.location='{% url 'tasks:task_list' %}'"
-         style="cursor: pointer;
-                transition: transform 0.2s, box-shadow 0.2s"
+         {% if is_owner %}onclick="window.location='{% url 'tasks:task_list' %}'"
+         style="cursor: pointer; transition: transform 0.2s, box-shadow 0.2s"
          onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 15px rgba(0,0,0,0.1)'"
-         onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow=''">
+         onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow=''"{% endif %}>
       <div class="card-header bg-success text-white">
         <h5 class="mb-0">
           <i class="bi bi-list-task me-2"></i>Задачи
@@ -271,6 +271,7 @@
       </div>
     </div>
     <!-- ==================== КОМАНДЫ ==================== -->
+    {% if is_owner %}
     <div class="card shadow-sm mb-5">
       <div class="card-header bg-info text-white">
         <h5 class="mb-0">
@@ -379,6 +380,7 @@
         </div>
       </div>
     </div>
+    {% endif %}
   </div>
   {% block extra_js %}
   {% endblock %}

@@ -46,6 +46,13 @@
                         <i class="bi bi-bar-chart-line me-1"></i>Статистика
                       </a>
                     </div>
+                  {% elif profile.is_statistics_public %}
+                    <div>
+                      <a href="{% url 'profile:profile_public_statistic' username=profile.user.username %}"
+                         class="btn btn-outline-success btn-sm mt-2">
+                        <i class="bi bi-bar-chart-line me-1"></i>Статистика
+                      </a>
+                    </div>
                   {% endif %}
                 </div>
               </div>

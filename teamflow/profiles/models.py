@@ -28,6 +28,12 @@ class Profile(models.Model):
         verbose_name="Telegram", help_text="@username или https://t.me/..."
     )
 
+    is_statistics_public = models.BooleanField(
+        default=False,
+        verbose_name="Public statistics",
+        help_text="Allow other users to view profile statistics."
+    )
+
     def __str__(self):
         return f'Профиль {self.user.username}'
     
