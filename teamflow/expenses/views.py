@@ -41,6 +41,21 @@ class ExpenseCreateView(
     template_name = "core/form.html"
     form_type = "expense"
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        team_id = self.kwargs.get("team_id")
+
+        if team_id:
+            kwargs["team_id"] = team_id
+        else:
+            kwargs["user"] = self.request.user
+
+        return kwargs
+
+    def form_valid(self, form):
+        self.assign_ownership(form.instance)
+        return super().form_valid(form)
+
 
 class ExpenseUpdateView(
     TeamAdminAccessMixin, ExpenseMixin, FormContextMixin,
@@ -98,6 +113,10 @@ class ExpenseCategoryCreateView(
             kwargs["user"] = self.request.user
 
         return kwargs
+
+    def form_valid(self, form):
+        self.assign_ownership(form.instance)
+        return super().form_valid(form)
 
     def get_success_url(self):
         team_id = self.kwargs.get("team_id")

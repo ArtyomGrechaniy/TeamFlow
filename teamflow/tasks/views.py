@@ -36,8 +36,11 @@ class TaskMixin(LoginRequiredMixin):
     def get_form_kwargs(self):
         """Передаёт в форму команду задачи или текущего пользователя."""
         kwargs = super().get_form_kwargs()
+        team_id = self.kwargs.get("team_id")
 
-        if getattr(self, "object", None) and self.object.team_id:
+        if team_id:
+            kwargs["team_id"] = team_id
+        elif getattr(self, "object", None) and self.object.team_id:
             kwargs["team_id"] = self.object.team_id
         else:
             kwargs["user"] = self.request.user
@@ -168,6 +171,10 @@ class TaskCreateView(
     form_type = "task"
     template_name = "core/form.html"
 
+    def form_valid(self, form):
+        self.assign_ownership(form.instance)
+        return super().form_valid(form)
+
 
 class TaskDetailView(TaskMixin, TeamMemberAccessMixin, DetailView):
     """Показывает подробную информацию о задаче."""
@@ -250,6 +257,10 @@ class TaskCategoryCreateView(
     form_class = TaskCategoryForm
     form_type = "tasks_category"
     template_name = "core/form.html"
+
+    def form_valid(self, form):
+        self.assign_ownership(form.instance)
+        return super().form_valid(form)
 
 
 class TaskCategoryUpdateView(
