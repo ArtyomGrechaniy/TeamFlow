@@ -1,17 +1,16 @@
-from django.contrib import admin
-from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-
+from django.contrib import admin
+from django.urls import include, path
 
 urlpatterns = [
-    path('expenses/', include('expenses.urls')),
-    path('tasks/', include('tasks.urls')),
-    path('teams/', include('teams.urls')),
-    path('profiles/', include('profiles.urls')),
-    path('accounts/', include('accounts.urls')),
-    path('admin/', admin.site.urls),
-    path('', include('core.urls')),
+    path("expenses/", include("expenses.urls")),
+    path("tasks/", include("tasks.urls")),
+    path("teams/", include("teams.urls")),
+    path("profiles/", include("profiles.urls")),
+    path("accounts/", include("accounts.urls")),
+    path("admin/", admin.site.urls),
+    path("", include("core.urls")),
 ]
 
 if settings.DEBUG:

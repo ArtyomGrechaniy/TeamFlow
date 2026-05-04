@@ -1,108 +1,77 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Count, Sum, Q
-from django.urls import reverse_lazy
-from django.utils import timezone
-from django.views.generic import (CreateView, DeleteView, ListView,
-                                  TemplateView, UpdateView, DetailView)
+from django.db.models import Count, Q, Sum
 from django.http import Http404
+from django.urls import reverse_lazy
+from django.views.generic import (
+    CreateView,
+    DeleteView,
+    DetailView,
+    ListView,
+    UpdateView,
+)
 
-from core.constants import NO_CATEGORY, OTHER_LABEL
+from core.mixins import (
+    DeleteContextMixin,
+    FormContextMixin,
+    OwnershipMixin,
+    TeamAdminAccessMixin,
+    TeamMemberAccessMixin,
+    UserTeamObjectQuerysetMixin
+)
+from teams.models import Team, TeamMember
 
 from .forms import ExpenseCategoryForm, ExpenseForm
 from .models import Expense, ExpenseCategory
-from teams.models import Team, TeamMember
-from core.mixins import (FormContextMixin, TeamMemberAccessMixin, 
-                         TeamAdminAccessMixin, DeleteContextMixin,
-                         OwnershipMixin)
 
 
 # ====================== МИКСИНЫ ======================
 class ExpenseMixin(LoginRequiredMixin):
+    """Добавляет общие настройки и данные формы для views расходов."""
     model = Expense
-    success_url = reverse_lazy('expenses:expense_list')
-
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-
-        if getattr(self, 'object', None) and self.object.team_id:
-            kwargs['team_id'] = self.object.team_id
-        else:
-            kwargs['user'] = self.request.user
-
-        return kwargs
-
+    success_url = reverse_lazy("expenses:expense_list")
 
 
 # ====================== CRUD ======================
 class ExpenseCreateView(
-    TeamAdminAccessMixin,
-    OwnershipMixin,
-    ExpenseMixin,
-    FormContextMixin,
-    CreateView
-):
+    TeamAdminAccessMixin, OwnershipMixin, ExpenseMixin,
+    FormContextMixin, CreateView
+):    
+    """Создаёт командный или личный расход."""
     form_class = ExpenseForm
-    template_name = 'core/form.html'
-    form_type = 'expense'
+    template_name = "core/form.html"
+    form_type = "expense"
 
 
 class ExpenseUpdateView(
-    TeamAdminAccessMixin,
-    ExpenseMixin,
-    FormContextMixin,
-    UpdateView
+    TeamAdminAccessMixin, ExpenseMixin, FormContextMixin,
+    UpdateView, UserTeamObjectQuerysetMixin
 ):
+    """Редактирует личный или командный расход."""
     form_class = ExpenseForm
-    form_type = 'expense'
-    template_name = 'core/form.html'
-
-    def get_object(self, queryset=None):
-        obj = super().get_object(queryset)
-        team_id = self.kwargs.get('team_id')
-
-        if team_id:
-            if obj.team_id != int(team_id):
-                raise Http404()
-        else:
-            if obj.team is not None:
-                raise Http404()
-
-        return obj
+    form_type = "expense"
+    template_name = "core/form.html"
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        team_id = self.kwargs.get('team_id')
+        team_id = self.kwargs.get("team_id")
 
         if team_id:
-            kwargs['team_id'] = team_id
+            kwargs["team_id"] = team_id
         else:
-            kwargs['user'] = self.request.user
+            kwargs["user"] = self.request.user
 
         return kwargs
 
 
 class ExpenseDeleteView(
-    TeamAdminAccessMixin,
-    DeleteContextMixin,
-    DeleteView
+    TeamAdminAccessMixin, DeleteContextMixin,
+    DeleteView, UserTeamObjectQuerysetMixin
 ):
+    """Удаляет расход с подтверждением действия."""
     model = Expense
-    template_name = 'core/confirm_delete.html'
-    delete_type = 'expense'
-    success_url = reverse_lazy('expenses:expense_list')
-
-    def get_object(self, queryset = None):
-        obj = super().get_object(queryset)
-        team_id = self.kwargs.get('team_id')
-        
-        if team_id:
-            if obj.team_id != int(team_id):
-                raise Http404()
-        else:
-            if obj.team is not None:
-                raise Http404()
-        
-        return obj
+    template_name = "core/confirm_delete.html"
+    delete_type = "expense"
+    success_url = reverse_lazy("expenses:expense_list")
 
 
 class ExpenseCategoryCreateView(
@@ -110,146 +79,155 @@ class ExpenseCategoryCreateView(
     OwnershipMixin,
     LoginRequiredMixin,
     FormContextMixin,
-    CreateView
+    CreateView,
+    UserTeamObjectQuerysetMixin
 ):
+    """Создаёт категорию расходов для пользователя или команды."""
     model = ExpenseCategory
     form_class = ExpenseCategoryForm
-    form_type = 'expenses_category'
-    template_name = 'core/form.html'
+    form_type = "expenses_category"
+    template_name = "core/form.html"
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        team_id = self.kwargs.get('team_id')
+        team_id = self.kwargs.get("team_id")
 
         if team_id:
-            kwargs['team_id'] = team_id
+            kwargs["team_id"] = team_id
         else:
-            kwargs['user'] = self.request.user
+            kwargs["user"] = self.request.user
 
         return kwargs
 
-    def form_valid(self, form):
-        team_id = self.kwargs.get('team_id')
-        if team_id:
-            form.instance.team_id = team_id
-            form.instance.user = None
-        else:
-            form.instance.user = self.request.user
-            form.instance.team = None
-        return super().form_valid(form)
-    
     def get_success_url(self):
-        team_id = self.kwargs.get('team_id')
+        team_id = self.kwargs.get("team_id")
         if team_id:
-            return reverse_lazy('teams:expenses:category_list', kwargs={'team_id': team_id})
+            return reverse_lazy(
+                "teams:expenses:category_list", kwargs={"team_id": team_id}
+            )
         else:
-            return reverse_lazy('expenses:category_list')
-        
+            return reverse_lazy("expenses:category_list")
+
 
 class ExpenseCategoryUpdateView(
-    TeamAdminAccessMixin,
-    FormContextMixin,
-    UpdateView
+    TeamAdminAccessMixin, FormContextMixin, UserTeamObjectQuerysetMixin, UpdateView
 ):
+    """Редактирует категорию расходов."""
     model = ExpenseCategory
     form_class = ExpenseCategoryForm
-    form_type = 'expenses_category'
-    template_name = 'core/form.html'
-
-    def get_success_url(self):
-        return reverse_lazy('expenses:category_list')
-
-    def get_queryset(self):
-        user = self.request.user
-        user_teams = TeamMember.objects.filter(
-            user=user, 
-            role__in=['owner', 'admin']
-        ).values_list('team', flat=True)
-
-        return ExpenseCategory.objects.filter(
-            Q(user=user) | Q(team__in=user_teams)
-        )
+    form_type = "expenses_category"
+    template_name = "core/form.html"
 
 
-
-class ExpenseCategoryDeleteView(TeamAdminAccessMixin, DeleteView):
+class ExpenseCategoryDeleteView(
+    TeamAdminAccessMixin, DeleteContextMixin, UserTeamObjectQuerysetMixin, DeleteView
+):
+    """Удаляет личную категорию расходов."""
     model = ExpenseCategory
-    success_url = reverse_lazy('expenses:category_list')
-
-    def get_queryset(self):
-        return ExpenseCategory.objects.filter(user=self.request.user)
+    template_name = "core/confirm_delete.html"
+    delete_type = "expense_category"
+    success_url = reverse_lazy("expenses:category_list")
 
 
 class ExpenseDetailView(ExpenseMixin, TeamMemberAccessMixin, DetailView):
-    template_name = 'expenses/expense_detail.html'
-    context_object_name = 'expense'
+    template_name = "expenses/expense_detail.html"
+    context_object_name = "expense"
 
 
 class ExpenseListView(TeamMemberAccessMixin, ListView):
     model = Expense
-    template_name = 'expenses/expense_list.html'
-    context_object_name = 'expenses'
+    template_name = "expenses/expense_list.html"
+    context_object_name = "expenses"
     paginate_by = 20
 
     def get_base_queryset(self):
         user = self.request.user
-        team_id = self.kwargs.get('team_id')
+        team_id = self.kwargs.get("team_id")
 
         if team_id:
             return Expense.objects.filter(team_id=team_id)
         else:
-            user_teams = TeamMember.objects.filter(user=user).values_list('team', flat=True)
-            return Expense.objects.filter(
-                Q(user=user) | Q(team__in=user_teams)
+            user_teams = TeamMember.objects.filter(user=user).values_list(
+                "team", flat=True
             )
+            return Expense.objects.filter(Q(user=user) | Q(team__in=user_teams))
 
     def get_queryset(self):
-        queryset = self.get_base_queryset().select_related('category', 'team')
+        queryset = self.get_base_queryset().select_related("category", "team")
 
-        selected_categories = self.request.GET.getlist('category')
+        selected_categories = self.request.GET.getlist("category")
         if selected_categories:
             queryset = queryset.filter(category__id__in=selected_categories)
 
-        return queryset.order_by('-date', '-created_at')
-    
+        return queryset.order_by("-date", "-created_at")
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
-        team_id = self.kwargs.get('team_id')
+        team_id = self.kwargs.get("team_id")
 
         if team_id:
-            context['current_team'] = Team.objects.get(id=team_id)
-            context['user_teams'] = None
-            context['all_categories'] = ExpenseCategory.objects.filter(team_id=team_id)
-            context['has_any_expenses'] = Expense.objects.filter(team_id=team_id).exists()
-            context['selected_categories'] = []
+            context["current_team"] = Team.objects.get(id=team_id)
+            context["user_teams"] = None
+            context["all_categories"] = ExpenseCategory.objects.filter(team_id=team_id)
+            context["has_any_expenses"] = Expense.objects.filter(
+                team_id=team_id
+            ).exists()
+            context["selected_categories"] = []
         else:
-            context['current_team'] = None
-            context['user_teams'] = Team.objects.filter(members__user=user).distinct()
+            context["current_team"] = None
+            context["user_teams"] = Team.objects.filter(members__user=user).distinct()
 
-            context['all_categories'] = ExpenseCategory.objects.filter(
-                Q(user=user) |
-                Q(team__in=TeamMember.objects.filter(user=user).values_list('team', flat=True))
-            ).distinct().order_by('name')
+            context["all_categories"] = (
+                ExpenseCategory.objects.filter(
+                    Q(user=user)
+                    | Q(
+                        team__in=TeamMember.objects.filter(user=user).values_list(
+                            "team", flat=True
+                        )
+                    )
+                )
+                .distinct()
+                .order_by("name")
+            )
 
-            user_teams = TeamMember.objects.filter(user=user).values_list('team', flat=True)
-            context['has_any_expenses'] = Expense.objects.filter(
+            user_teams = TeamMember.objects.filter(user=user).values_list(
+                "team", flat=True
+            )
+            context["has_any_expenses"] = Expense.objects.filter(
                 Q(user=user) | Q(team__in=user_teams)
             ).exists()
 
-            context['selected_categories'] = self.request.GET.getlist('category')
+            context["selected_categories"] = self.request.GET.getlist("category")
 
         return context
 
 
 class ExpenseCategoryListView(TeamMemberAccessMixin, ListView):
     model = ExpenseCategory
-    template_name = 'expenses/expense_category_list.html'
-    context_object_name = 'categories'
+    template_name = "expenses/expense_category_list.html"
+    context_object_name = "categories"
 
     def get_queryset(self):
-        queryset = super().get_queryset()
+        user = self.request.user
+        team_id = self.kwargs.get("team_id")
+
+        if team_id:
+            queryset = ExpenseCategory.objects.filter(team_id=team_id)
+        else:
+            user_teams = TeamMember.objects.filter(user=user).values_list(
+                "team", flat=True
+            )
+            queryset = ExpenseCategory.objects.filter(
+                Q(user=user) | Q(team__in=user_teams)
+            ).distinct()
+
         return queryset.annotate(
-            expense_count=Count('expenses'),
-            total_amount=Sum('expenses__amount_rub')
-        ).order_by('name')
+            expense_count=Count("expenses"), total_amount=Sum("expenses__amount_rub")
+        ).order_by("name")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        team_id = self.kwargs.get("team_id")
+        context["current_team"] = Team.objects.get(id=team_id) if team_id else None
+        return context

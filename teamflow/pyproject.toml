@@ -1,0 +1,12 @@
+[tool.isort]
+profile = "black"
+line_length = 88
+known_first_party = [
+    "profiles",
+    "teams",
+    "tasks",
+    "expenses",
+    "core",
+    "accounts",
+    "teamflow",
+]
