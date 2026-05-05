@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from django.utils.translation import gettext_lazy as _
 
 User = get_user_model()
 
@@ -46,6 +47,10 @@ class Profile(models.Model):
         if self.user.first_name and self.user.last_name:
             return (self.user.first_name[0] + self.user.last_name[0]).upper()
         return self.user.username[:2].upper()
+    
+    class Meta:
+        verbose_name = _("Профиль")
+        verbose_name_plural = _("Профили")
 
 # Автоматическое создание профиля при регистрации пользователя
 @receiver(post_save, sender=User)

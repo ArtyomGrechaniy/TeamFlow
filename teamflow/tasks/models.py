@@ -32,10 +32,6 @@ class TaskCategory(BaseCategory):
         verbose_name = _("Категория задач")
         verbose_name_plural = _("Категории задач")
         ordering = ["name"]
-        indexes = [
-            models.Index(fields=["user"]),
-            models.Index(fields=["team"]),
-        ]
         constraints = [
             models.UniqueConstraint(
                 fields=["user", "slug"],
@@ -55,11 +51,6 @@ class TaskCategory(BaseCategory):
                 name="task_category_belongs_to_either_user_or_team",
             ),
         ]
-
-    def get_absolute_url(self):
-        from django.urls import reverse
-
-        return reverse("tasks:task_category_detail", kwargs={"slug": self.slug})
 
 
 class Task(models.Model):
@@ -139,9 +130,8 @@ class Task(models.Model):
         ordering = ["-created_at"]
         indexes = [
             models.Index(fields=["status", "priority"]),
-            models.Index(fields=["team", "status"]),
-            models.Index(fields=["user", "status"]),
             models.Index(fields=["deadline"]),
+            models.Index(fields=['created_at'])
         ]
         constraints = [
             models.CheckConstraint(
