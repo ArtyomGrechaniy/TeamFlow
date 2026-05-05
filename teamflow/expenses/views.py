@@ -1,5 +1,7 @@
+from math import ceil
+
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, Q, Sum, Min, Max
 from django.http import Http404
 from django.urls import reverse_lazy
 from django.views.generic import (
@@ -177,6 +179,14 @@ class ExpenseListView(TeamMemberAccessMixin, ListView):
         selected_categories = self.request.GET.getlist("category")
         if selected_categories:
             queryset = queryset.filter(category__id__in=selected_categories)
+        
+        min_value = self.request.GET.get("min")
+        if min_value:
+            queryset = queryset.filter(amount_rub__gte=min_value)
+
+        max_value = self.request.GET.get("max")
+        if max_value:
+            queryset = queryset.filter(amount_rub__lte=max_value)
 
         return queryset.order_by("-date", "-created_at")
 
@@ -184,6 +194,25 @@ class ExpenseListView(TeamMemberAccessMixin, ListView):
         context = super().get_context_data(**kwargs)
         user = self.request.user
         team_id = self.kwargs.get("team_id")
+        
+        base_qs = self.get_base_queryset()
+        
+        agg = base_qs.aggregate(
+            min_possible=Min("amount_rub"),
+            max_possible=Max("amount_rub"),
+        )
+
+        min_p = agg["min_possible"] or 0
+        max_p = agg["max_possible"] or 10000
+
+        if min_p == max_p:
+            max_p = min_p + 100
+        else:
+            if max_p % 100 != 0:
+                max_p = ceil(max_p / 100) * 100
+
+        context["min_possible"] = min_p
+        context["max_possible"] = max_p
 
         if team_id:
             context["current_team"] = Team.objects.get(id=team_id)

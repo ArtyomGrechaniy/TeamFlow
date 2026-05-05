@@ -109,6 +109,27 @@
                 {% endfor %}
               </div>
             </div>
+<!-- === 3. ФИЛЬТР: ДИАПАЗОН (MIN / MAX) === -->
+<div class="col-md-5">
+  <label class="form-label fw-semibold mb-2">Сумма</label>
+
+  <div class="border rounded p-3 bg-light">
+
+    <div class="d-flex justify-content-between mb-2">
+      <span>От: <b id="minVal"> {{ min_possible|default:0 }} </b></span>
+      <span>До: <b id="maxVal"> {{ max_possible|default:10000 }} </b></span>
+    </div>
+
+    <!-- Слайдер -->
+    <div id="priceSlider" class="mt-3"></div>
+
+    <!-- скрытые поля для Django -->
+    <input type="hidden" name="min" id="minInput">
+    <input type="hidden" name="max" id="maxInput">
+
+  </div>
+</div>
+</div>
           </div>
           <div class="mt-3 text-end">
             <button type="submit" class="btn btn-primary">
@@ -202,17 +223,52 @@
       </div>
     {% endif %}
   </div>
-  <script>
-document.querySelectorAll('#filterForm input').forEach(input => {
-    input.addEventListener('change', () => {
-        document.getElementById('filterForm').submit();
-    });
+<script>
+const urlParams = new URLSearchParams(window.location.search);
+
+const minPossible = parseFloat("{{ min_possible }}") || 0;
+const maxPossible = parseFloat("{{ max_possible }}") || 10000;
+
+const urlMin = parseInt(urlParams.get("min"));
+const urlMax = parseInt(urlParams.get("max"));
+
+let startMin = isNaN(urlMin) ? minPossible : urlMin;
+let startMax = isNaN(urlMax) ? maxPossible : urlMax;
+
+// Приводим к границам возможного диапазона
+startMin = Math.max(minPossible, Math.min(startMin, maxPossible));
+startMax = Math.max(minPossible, Math.min(startMax, maxPossible));
+
+// Защита от startMin > startMax (если в URL кривые параметры)
+if (startMin > startMax) {
+    startMin = minPossible;
+    startMax = maxPossible;
+}
+
+const slider = document.getElementById('priceSlider');
+
+noUiSlider.create(slider, {
+    start: [startMin, startMax],
+    connect: true,
+    step: 100,
+    range: {
+        min: minPossible,
+        max: maxPossible
+    }
 });
 
-function toggleAllCategories() {
-    const checkboxes = document.querySelectorAll('.category-checkbox');
-    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
-    checkboxes.forEach(cb => cb.checked = !allChecked);
-}
-  </script>
+const minVal   = document.getElementById('minVal');
+const maxVal   = document.getElementById('maxVal');
+const minInput = document.getElementById('minInput');
+const maxInput = document.getElementById('maxInput');
+
+slider.noUiSlider.on('update', function(values) {
+    const min = Math.round(values[0]);
+    const max = Math.round(values[1]);
+    minVal.textContent = min;
+    maxVal.textContent = max;
+    minInput.value = min;
+    maxInput.value = max;
+});
+</script>
 {% endblock %}
