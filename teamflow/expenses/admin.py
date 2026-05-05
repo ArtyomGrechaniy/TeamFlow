@@ -23,10 +23,14 @@ class ExpenseCategoryAdmin(admin.ModelAdmin):
         "user",
         "team"
     )
-    list_select_related = (
-        "user",
-        "team"
+    search_fields = (
+        "name",
+        "slug"
     )
+    list_filter = ("team",)
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("user", "team")
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
@@ -54,7 +58,6 @@ class ExpenseAdmin(admin.ModelAdmin):
     list_filter = (
         "category",
         "team",
-        "user",
         "currency"
     )
     ordering = (
@@ -65,12 +68,12 @@ class ExpenseAdmin(admin.ModelAdmin):
         "title",
         "description"
     )
-    list_select_related = (
-        "user",
-        "team",
-        "category"
-    )
-
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related(
+            "user", "team", "category"
+        )
+    
     def get_readonly_fields(self, request, obj=None):
         if obj:
             return ("team", "user")

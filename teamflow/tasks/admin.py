@@ -12,10 +12,10 @@ class TaskCategoryAdmin(admin.ModelAdmin):
         "user",
         "team"
     )
-    list_select_related = (
-        "user",
-        "team"
-    )
+    ordering = ("team__name", "name")
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related("user", "team")
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
@@ -48,11 +48,11 @@ class TaskAdmin(admin.ModelAdmin):
         "-deadline",
         "-updated_at"
     )
-    list_select_related = (
-        "user",
-        "team",
-        "category"
-    )
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related(
+            "user", "team", "category"
+        )
 
     def get_readonly_fields(self, request, obj=None):
         if obj:
