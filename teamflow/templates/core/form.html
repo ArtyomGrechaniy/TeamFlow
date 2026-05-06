@@ -13,7 +13,7 @@
             <form method="post" novalidate>
               {% csrf_token %}
               {% for field in form %}
-                {% if field.name != 'currency' %}
+                {% if field.name != 'currency' and field.name != 'team' %}
                   <div class="mb-3">
                     {% if field.name == 'amount' %}
                       <label class="form-label fw-semibold">{{ field.label }}</label>
