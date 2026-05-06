@@ -1,50 +1,50 @@
 <!DOCTYPE html>
 <html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>{% block title %}Ошибка{% endblock %}</title>
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #0f0f0f;
-            color: #ffffff;
-            display: flex;
-            height: 100vh;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-        }
+    <head>
+        <meta charset="UTF-8">
+        <title>{% block title %}Ошибка{% endblock %}</title>
+        <style>
+            body {
+                margin: 0;
+                font-family: Arial, sans-serif;
+                background: #0f0f0f;
+                color: #ffffff;
+                display: flex;
+                height: 100vh;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+            }
 
-        .container {
-            max-width: 500px;
-        }
+            .container {
+                max-width: 500px;
+            }
 
-        h1 {
-            font-size: 64px;
-            margin: 0;
-        }
+            h1 {
+                font-size: 64px;
+                margin: 0;
+            }
 
-        p {
-            font-size: 18px;
-            opacity: 0.7;
-        }
+            p {
+                font-size: 18px;
+                opacity: 0.7;
+            }
 
-        a {
-            display: inline-block;
-            margin-top: 20px;
-            color: #4da3ff;
-            text-decoration: none;
-        }
+            a {
+                display: inline-block;
+                margin-top: 20px;
+                color: #4da3ff;
+                text-decoration: none;
+            }
 
-        a:hover {
-            text-decoration: underline;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        {% block content %}{% endblock %}
-    </div>
-</body>
+            a:hover {
+                text-decoration: underline;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            {% block content %}{% endblock %}
+        </div>
+    </body>
 </html>

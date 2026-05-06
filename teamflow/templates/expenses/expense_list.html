@@ -1,312 +1,308 @@
 {% extends 'base.html' %}
 {% block title %}
-  {% if current_team %}
-    Расходы команды «{{ current_team.name }}»
-  {% else %}
-    Все расходы
-  {% endif %}
+{% if current_team %}
+Расходы команды «{{ current_team.name }}»
+{% else %}
+Все расходы
+{% endif %}
 {% endblock %}
 {% block content %}
-  <div class="container py-5">
-    <!-- Заголовок + кнопка -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <h1 class="h3 mb-0">
-        💸
-        {% if current_team %}
-          Расходы команды «{{ current_team.name }}»
-        {% else %}
-          Все расходы
-        {% endif %}
-      </h1>
+<div class="container py-5">
+  <!-- Заголовок + кнопка -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">
+      💸
       {% if current_team %}
-        <div class="btn-group">
-          <a href="{% url 'teams:expenses:category_list' team_id=current_team.id %}"
-             class="btn btn-outline-secondary btn-lg">
-            <i class="bi bi-tags me-2"></i>Категории
-          </a>
-          <a href="{% url 'teams:expenses:expense_create' team_id=current_team.id %}"
-             class="btn btn-primary btn-lg">
-            <i class="bi bi-plus-circle me-2"></i>Добавить расход
-          </a>
-        </div>
+      Расходы команды «{{ current_team.name }}»
       {% else %}
-        <div class="btn-group">
-          <a href="{% url 'expenses:category_list' %}"
-             class="btn btn-outline-secondary btn-lg">
-            <i class="bi bi-tags me-2"></i>Категории
-          </a>
-          <a href="{% url 'expenses:expense_create' %}"
-             class="btn btn-primary btn-lg">
-            <i class="bi bi-plus-circle me-2"></i>Добавить расход
-          </a>
-        </div>
+      Все расходы
       {% endif %}
+    </h1>
+    {% if current_team %}
+    <div class="btn-group">
+      <a href="{% url 'teams:expenses:category_list' team_id=current_team.id %}"
+        class="btn btn-outline-secondary btn-lg">
+      <i class="bi bi-tags me-2"></i>Категории
+      </a>
+      <a href="{% url 'teams:expenses:expense_create' team_id=current_team.id %}"
+        class="btn btn-primary btn-lg">
+      <i class="bi bi-plus-circle me-2"></i>Добавить расход
+      </a>
     </div>
-    <!-- ==================== ФИЛЬТРЫ ==================== -->
-    <div class="card shadow-sm mb-4">
-      <div class="card-body">
-        <form method="get" id="filterForm">
-          <div class="row g-4">
-            <!-- === 1. ТИП РАСХОДА (Toggle Buttons) === -->
-            {% if not current_team and user_teams %}
-              <div class="col-md-6">
-                <label class="form-label fw-semibold mb-2">Тип расхода</label>
-                <div class="btn-group w-100" role="group" aria-label="Тип расхода">
-                  <input type="radio"
-                         class="btn-check"
-                         name="type"
-                         id="type_all"
-                         value=""
-                         {% if not request.GET.type %}checked{% endif %}>
-                  <label class="btn btn-outline-primary" for="type_all">Все</label>
-                  <input type="radio"
-                         class="btn-check"
-                         name="type"
-                         id="type_personal"
-                         value="personal"
-                         {% if request.GET.type == 'personal' %}checked{% endif %}>
-                  <label class="btn btn-outline-primary" for="type_personal">Личные</label>
-                  <input type="radio"
-                         class="btn-check"
-                         name="type"
-                         id="type_team"
-                         value="team"
-                         {% if request.GET.type == 'team' %}checked{% endif %}>
-                  <label class="btn btn-outline-primary" for="type_team">Командные</label>
-                </div>
-              </div>
-            {% endif %}
-            <!-- === 2. КАТЕГОРИИ (Чекбоксы) === -->
-            <div class="col-md-6">
-              <div class="d-flex justify-content-between align-items-center mb-2">
-                <label class="form-label fw-semibold mb-0">Категории</label>
-                <button type="button"
-                        class="btn btn-sm btn-link p-0"
-                        onclick="toggleAllCategories()">Выбрать все / Снять все</button>
-              </div>
-              <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-2"
-                   style="max-height: 140px;
-                          overflow-y: auto;
-                          border: 1px solid #dee2e6;
-                          border-radius: 6px;
-                          padding: 8px">
-                {% for cat in all_categories %}
-                  <div class="col">
-                    <div class="form-check">
-                      <input class="form-check-input category-checkbox"
-                             type="checkbox"
-                             name="category"
-                             value="{{ cat.id }}"
-                             id="cat_{{ cat.id }}"
-                             {% if cat.id|stringformat:'s' in selected_categories %}checked{% endif %}>
-                      <label class="form-check-label" for="cat_{{ cat.id }}">
-                        <span class="badge"
-                              style="background-color: {{ cat.color|default:'#6c757d' }};
-                                     color: white">{{ cat.name }}</span>
-                      </label>
-                    </div>
-                  </div>
-                {% endfor %}
-              </div>
-            </div>
-<!-- === 3. ФИЛЬТР: ДИАПАЗОН (MIN / MAX) === -->
-<div class="col-md-6">
-  <label class="form-label fw-semibold mb-2">Сумма</label>
-
-  <div class="border rounded p-3 bg-light">
-
-    <div class="d-flex justify-content-between mb-2">
-      <span>От: <b id="minVal"> {{ min_possible|default:0 }} </b></span>
-      <span>До: <b id="maxVal"> {{ max_possible|default:10000 }} </b></span>
-    </div>
-
-    <!-- Слайдер -->
-    <div id="priceSlider" class="mt-3"></div>
-
-    <!-- скрытые поля для Django -->
-    <input type="hidden" name="min" id="minInput">
-    <input type="hidden" name="max" id="maxInput">
-
-  </div>
-</div>
-</div>
-<!-- === ФИЛЬТР ПО ДАТАМ (ОДИН КАЛЕНДАРЬ) === -->
-<div class="col-md-6">
-    <label class="form-label fw-semibold mb-2">Период</label>
-    <input type="text" 
-           id="dateRangePicker" 
-           class="form-control"
-           placeholder="Выберите период">
-    
-    <!-- Скрытые поля для Django -->
-    <input type="hidden" name="date_from" id="date_from" value="{{ selected_date_from }}">
-    <input type="hidden" name="date_to"   id="date_to"   value="{{ selected_date_to }}">
-</div>
-          </div>
-          <div class="mt-3 text-end">
-            <button type="submit" class="btn btn-primary">
-              <i class="bi bi-funnel me-1"></i> Применить фильтры
-            </button>
-            <a href="{% url 'expenses:expense_list' %}"
-               class="btn btn-outline-secondary ms-2">Сбросить</a>
-          </div>
-        </form>
-      </div>
-    </div>
-    <!-- Основная таблица -->
-    {% if expenses %}
-      <div class="card shadow-sm">
-        <div class="card-body p-0">
-          <div class="table-responsive">
-            <table class="table table-hover mb-0">
-              <thead class="table-light">
-                <tr>
-                  <th>Дата</th>
-                  <th>Название</th>
-                  <th>Категория</th>
-                  {% if not current_team %}<th>Команда</th>{% endif %}
-                  <th class="text-end">Сумма</th>
-                  <th class="text-end">В рублях</th>
-                  <th class="text-center">Действия</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for expense in expenses %}
-                  <tr onclick="window.location='{% url 'expenses:expense_detail' expense.pk %}'"
-                      style="cursor: pointer"
-                      class="clickable-row">
-                    <td class="text-nowrap">{{ expense.date|date:"d.m.Y" }}</td>
-                    <td>
-                      <div class="fw-semibold">{{ expense.title }}</div>
-                      {% if expense.description %}<small class="text-muted">{{ expense.description|truncatechars:70 }}</small>{% endif %}
-                    </td>
-                    <td>
-                      {% if expense.category %}
-                        <span class="badge"
-                              style="background-color: {{ expense.category.color|default:'#6c757d' }}">
-                          {{ expense.category.name }}
-                        </span>
-                      {% else %}
-                        <span class="text-muted">—</span>
-                      {% endif %}
-                    </td>
-                    {% if not current_team %}
-                      <td>
-                        {% if expense.team %}
-                          {{ expense.team.name }}
-                        {% else %}
-                          <span class="badge bg-light text-dark">Личный</span>
-                        {% endif %}
-                      </td>
-                    {% endif %}
-                    <td class="text-end fw-semibold">{{ expense.amount }} {{ expense.get_currency_display }}</td>
-                    <td class="text-end fw-semibold">
-                      {% if expense.amount_rub %}
-                        {{ expense.amount_rub|floatformat:2 }} ₽
-                      {% else %}
-                        <span class="text-muted">—</span>
-                      {% endif %}
-                    </td>
-                    <td class="text-center">
-                      <!-- Кнопки с остановкой всплытия события -->
-                      <a href="{% url 'expenses:expense_update' expense.pk %}"
-                         class="btn btn-sm btn-outline-secondary me-1"
-                         onclick="event.stopImmediatePropagation()">✏️</a>
-                      <a href="{% url 'expenses:expense_delete' expense.pk %}"
-                         class="btn btn-sm btn-outline-danger"
-                         onclick="event.stopImmediatePropagation()">🗑</a>
-                    </td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
     {% else %}
-      <div class="text-center py-5">
-        <i class="bi bi-wallet2" style="font-size: 4.5rem; color: #6c757d;"></i>
-        <h4 class="text-muted mt-3">Пока нет расходов</h4>
-        <p class="text-muted">Добавьте первый расход, чтобы начать отслеживать траты</p>
-        <a href="{% url 'expenses:expense_create' %}"
-           class="btn btn-primary mt-3">
-          <i class="bi bi-plus-circle me-2"></i>Добавить первый расход
-        </a>
-      </div>
+    <div class="btn-group">
+      <a href="{% url 'expenses:category_list' %}"
+        class="btn btn-outline-secondary btn-lg">
+      <i class="bi bi-tags me-2"></i>Категории
+      </a>
+      <a href="{% url 'expenses:expense_create' %}"
+        class="btn btn-primary btn-lg">
+      <i class="bi bi-plus-circle me-2"></i>Добавить расход
+      </a>
+    </div>
     {% endif %}
   </div>
+  <!-- ==================== ФИЛЬТРЫ ==================== -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <form method="get" id="filterForm">
+        <div class="row g-4">
+          <!-- === ТИП РАСХОДА (Toggle Buttons) === -->
+          {% if not current_team and user_teams %}
+          <div class="col-md-6">
+            <label class="form-label fw-semibold mb-2">Тип расхода</label>
+            <div class="btn-group w-100" role="group" aria-label="Тип расхода">
+              <input type="radio"
+              class="btn-check"
+              name="type"
+              id="type_all"
+              value=""
+              {% if not request.GET.type %}checked{% endif %}>
+              <label class="btn btn-outline-primary" for="type_all">Все</label>
+              <input type="radio"
+              class="btn-check"
+              name="type"
+              id="type_personal"
+              value="personal"
+              {% if request.GET.type == 'personal' %}checked{% endif %}>
+              <label class="btn btn-outline-primary" for="type_personal">Личные</label>
+              <input type="radio"
+              class="btn-check"
+              name="type"
+              id="type_team"
+              value="team"
+              {% if request.GET.type == 'team' %}checked{% endif %}>
+              <label class="btn btn-outline-primary" for="type_team">Командные</label>
+            </div>
+          </div>
+          {% endif %}
+          <!-- === КАТЕГОРИИ (Чекбоксы) === -->
+          <div class="col-md-6">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <label class="form-label fw-semibold mb-0">Категории</label>
+              <button type="button"
+                class="btn btn-sm btn-link p-0"
+                onclick="toggleAllCategories()">Выбрать все / Снять все</button>
+            </div>
+            <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-2"
+              style="max-height: 140px;
+              overflow-y: auto;
+              border: 1px solid #dee2e6;
+              border-radius: 6px;
+              padding: 8px">
+              {% for cat in all_categories %}
+              <div class="col">
+                <div class="form-check">
+                  <input class="form-check-input category-checkbox"
+                  type="checkbox"
+                  name="category"
+                  value="{{ cat.id }}"
+                  id="cat_{{ cat.id }}"
+                  {% if cat.id|stringformat:'s' in selected_categories %}checked{% endif %}>
+                  <label class="form-check-label" for="cat_{{ cat.id }}">
+                  <span class="badge"
+                    style="background-color: {{ cat.color|default:'#6c757d' }};
+                    color: white">{{ cat.name }}</span>
+                  </label>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          <!-- === ФИЛЬТР: ДИАПАЗОН (MIN / MAX) === -->
+          <div class="col-md-6">
+            <label class="form-label fw-semibold mb-2">Сумма</label>
+            <div class="border rounded p-3 bg-light">
+              <div class="d-flex justify-content-between mb-2">
+                <span>От: <b id="minVal"> {{ min_possible|default:0 }} </b></span>
+                <span>До: <b id="maxVal"> {{ max_possible|default:10000 }} </b></span>
+              </div>
+              <!-- Слайдер -->
+              <div id="priceSlider" class="mt-3"></div>
+              <!-- скрытые поля для Django -->
+              <input type="hidden" name="min" id="minInput">
+              <input type="hidden" name="max" id="maxInput">
+            </div>
+          </div>
+        </div>
+        <!-- === ФИЛЬТР ПО ДАТАМ (ОДИН КАЛЕНДАРЬ) === -->
+        <div class="col-md-6">
+          <label class="form-label fw-semibold mb-2">Период</label>
+          <input type="text" 
+            id="dateRangePicker" 
+            class="form-control"
+            placeholder="Выберите период">
+          <!-- Скрытые поля для Django -->
+          <input type="hidden" name="date_from" id="date_from" value="{{ selected_date_from }}">
+          <input type="hidden" name="date_to"   id="date_to"   value="{{ selected_date_to }}">
+        </div>
+    </div>
+    <div class="mt-3 text-end">
+    <button type="submit" class="btn btn-primary">
+    <i class="bi bi-funnel me-1"></i> Применить фильтры
+    </button>
+    <a href="{% url 'expenses:expense_list' %}"
+      class="btn btn-outline-secondary ms-2">Сбросить</a>
+    </div>
+    </form>
+  </div>
+</div>
+<!-- Основная таблица -->
+{% if expenses %}
+<div class="card shadow-sm">
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Дата</th>
+            <th>Название</th>
+            <th>Категория</th>
+            {% if not current_team %}
+            <th>Команда</th>
+            {% endif %}
+            <th class="text-end">Сумма</th>
+            <th class="text-end">В рублях</th>
+            <th class="text-center">Действия</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for expense in expenses %}
+          <tr onclick="window.location='{% url 'expenses:expense_detail' expense.pk %}'"
+            style="cursor: pointer"
+            class="clickable-row">
+            <td class="text-nowrap">{{ expense.date|date:"d.m.Y" }}</td>
+            <td>
+              <div class="fw-semibold">{{ expense.title }}</div>
+              {% if expense.description %}<small class="text-muted">{{ expense.description|truncatechars:70 }}</small>{% endif %}
+            </td>
+            <td>
+              {% if expense.category %}
+              <span class="badge"
+                style="background-color: {{ expense.category.color|default:'#6c757d' }}">
+              {{ expense.category.name }}
+              </span>
+              {% else %}
+              <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            {% if not current_team %}
+            <td>
+              {% if expense.team %}
+              {{ expense.team.name }}
+              {% else %}
+              <span class="badge bg-light text-dark">Личный</span>
+              {% endif %}
+            </td>
+            {% endif %}
+            <td class="text-end fw-semibold">{{ expense.amount }} {{ expense.get_currency_display }}</td>
+            <td class="text-end fw-semibold">
+              {% if expense.amount_rub %}
+              {{ expense.amount_rub|floatformat:2 }} ₽
+              {% else %}
+              <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            <td class="text-center">
+              <!-- Кнопки с остановкой всплытия события -->
+              <a href="{% url 'expenses:expense_update' expense.pk %}"
+                class="btn btn-sm btn-outline-secondary me-1"
+                onclick="event.stopImmediatePropagation()">✏️</a>
+              <a href="{% url 'expenses:expense_delete' expense.pk %}"
+                class="btn btn-sm btn-outline-danger"
+                onclick="event.stopImmediatePropagation()">🗑</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="text-center py-5">
+  <i class="bi bi-wallet2" style="font-size: 4.5rem; color: #6c757d;"></i>
+  <h4 class="text-muted mt-3">Пока нет расходов</h4>
+  <p class="text-muted">Добавьте первый расход, чтобы начать отслеживать траты</p>
+  <a href="{% url 'expenses:expense_create' %}"
+    class="btn btn-primary mt-3">
+  <i class="bi bi-plus-circle me-2"></i>Добавить первый расход
+  </a>
+</div>
+{% endif %}
+</div>
 <script>
-const urlParams = new URLSearchParams(window.location.search);
-
-const minPossible = parseFloat("{{ min_possible }}") || 0;
-const maxPossible = parseFloat("{{ max_possible }}") || 10000;
-
-const urlMin = parseInt(urlParams.get("min"));
-const urlMax = parseInt(urlParams.get("max"));
-
-let startMin = isNaN(urlMin) ? minPossible : urlMin;
-let startMax = isNaN(urlMax) ? maxPossible : urlMax;
-
-// Приводим к границам возможного диапазона
-startMin = Math.max(minPossible, Math.min(startMin, maxPossible));
-startMax = Math.max(minPossible, Math.min(startMax, maxPossible));
-
-// Защита от startMin > startMax (если в URL кривые параметры)
-if (startMin > startMax) {
-    startMin = minPossible;
-    startMax = maxPossible;
-}
-
-const slider = document.getElementById('priceSlider');
-
-noUiSlider.create(slider, {
-    start: [startMin, startMax],
-    connect: true,
-    step: 100,
-    range: {
-        min: minPossible,
-        max: maxPossible
-    }
-});
-
-const minVal   = document.getElementById('minVal');
-const maxVal   = document.getElementById('maxVal');
-const minInput = document.getElementById('minInput');
-const maxInput = document.getElementById('maxInput');
-
-slider.noUiSlider.on('update', function(values) {
-    const min = Math.round(values[0]);
-    const max = Math.round(values[1]);
-    minVal.textContent = min;
-    maxVal.textContent = max;
-    minInput.value = min;
-    maxInput.value = max;
-});
-
-
-flatpickr("#dateRangePicker", {
-    mode: "range",
-    dateFormat: "Y-m-d",
-    locale: "ru",
-    
-    // Ограничиваем выбор дат
-    minDate: "1900-01-01",           // ← можно менять (например 2020-01-01)
-    maxDate: "today",                // не даёт выбрать будущее
-    
-    defaultDate: ["{{ selected_date_from }}", "{{ selected_date_to }}"],
-
-    onChange: function(selectedDates) {
-        const fromInput = document.getElementById("date_from");
-        const toInput   = document.getElementById("date_to");
-
-        if (selectedDates.length === 2) {
-            fromInput.value = selectedDates[0].toISOString().slice(0, 10);
-            toInput.value   = selectedDates[1].toISOString().slice(0, 10);
-        } else {
-            fromInput.value = "";
-            toInput.value   = "";
-        }
-    }
-});
+  const urlParams = new URLSearchParams(window.location.search);
+  
+  const minPossible = parseFloat("{{ min_possible }}") || 0;
+  const maxPossible = parseFloat("{{ max_possible }}") || 10000;
+  
+  const urlMin = parseInt(urlParams.get("min"));
+  const urlMax = parseInt(urlParams.get("max"));
+  
+  let startMin = isNaN(urlMin) ? minPossible : urlMin;
+  let startMax = isNaN(urlMax) ? maxPossible : urlMax;
+  
+  // Приводим к границам возможного диапазона
+  startMin = Math.max(minPossible, Math.min(startMin, maxPossible));
+  startMax = Math.max(minPossible, Math.min(startMax, maxPossible));
+  
+  // Защита от startMin > startMax (если в URL кривые параметры)
+  if (startMin > startMax) {
+      startMin = minPossible;
+      startMax = maxPossible;
+  }
+  
+  const slider = document.getElementById('priceSlider');
+  
+  noUiSlider.create(slider, {
+      start: [startMin, startMax],
+      connect: true,
+      step: 100,
+      range: {
+          min: minPossible,
+          max: maxPossible
+      }
+  });
+  
+  const minVal   = document.getElementById('minVal');
+  const maxVal   = document.getElementById('maxVal');
+  const minInput = document.getElementById('minInput');
+  const maxInput = document.getElementById('maxInput');
+  
+  slider.noUiSlider.on('update', function(values) {
+      const min = Math.round(values[0]);
+      const max = Math.round(values[1]);
+      minVal.textContent = min;
+      maxVal.textContent = max;
+      minInput.value = min;
+      maxInput.value = max;
+  });
+  
+  
+  flatpickr("#dateRangePicker", {
+      mode: "range",
+      dateFormat: "Y-m-d",
+      locale: "ru",
+      
+      // Ограничиваем выбор дат
+      minDate: "1900-01-01",
+      maxDate: "today",
+      
+      defaultDate: ["{{ selected_date_from }}", "{{ selected_date_to }}"],
+  
+      onChange: function(selectedDates) {
+          const fromInput = document.getElementById("date_from");
+          const toInput   = document.getElementById("date_to");
+  
+          if (selectedDates.length === 2) {
+              fromInput.value = selectedDates[0].toISOString().slice(0, 10);
+              toInput.value   = selectedDates[1].toISOString().slice(0, 10);
+          } else {
+              fromInput.value = "";
+              toInput.value   = "";
+          }
+      }
+  });
 </script>
 {% endblock %}
