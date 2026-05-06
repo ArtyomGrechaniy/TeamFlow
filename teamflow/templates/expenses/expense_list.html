@@ -49,7 +49,7 @@
           <div class="row g-4">
             <!-- === 1. ТИП РАСХОДА (Toggle Buttons) === -->
             {% if not current_team and user_teams %}
-              <div class="col-md-5">
+              <div class="col-md-6">
                 <label class="form-label fw-semibold mb-2">Тип расхода</label>
                 <div class="btn-group w-100" role="group" aria-label="Тип расхода">
                   <input type="radio"
@@ -77,7 +77,7 @@
               </div>
             {% endif %}
             <!-- === 2. КАТЕГОРИИ (Чекбоксы) === -->
-            <div class="col-md-7">
+            <div class="col-md-6">
               <div class="d-flex justify-content-between align-items-center mb-2">
                 <label class="form-label fw-semibold mb-0">Категории</label>
                 <button type="button"
@@ -110,7 +110,7 @@
               </div>
             </div>
 <!-- === 3. ФИЛЬТР: ДИАПАЗОН (MIN / MAX) === -->
-<div class="col-md-5">
+<div class="col-md-6">
   <label class="form-label fw-semibold mb-2">Сумма</label>
 
   <div class="border rounded p-3 bg-light">
@@ -129,6 +129,18 @@
 
   </div>
 </div>
+</div>
+<!-- === ФИЛЬТР ПО ДАТАМ (ОДИН КАЛЕНДАРЬ) === -->
+<div class="col-md-6">
+    <label class="form-label fw-semibold mb-2">Период</label>
+    <input type="text" 
+           id="dateRangePicker" 
+           class="form-control"
+           placeholder="Выберите период">
+    
+    <!-- Скрытые поля для Django -->
+    <input type="hidden" name="date_from" id="date_from" value="{{ selected_date_from }}">
+    <input type="hidden" name="date_to"   id="date_to"   value="{{ selected_date_to }}">
 </div>
           </div>
           <div class="mt-3 text-end">
@@ -269,6 +281,32 @@ slider.noUiSlider.on('update', function(values) {
     maxVal.textContent = max;
     minInput.value = min;
     maxInput.value = max;
+});
+
+
+flatpickr("#dateRangePicker", {
+    mode: "range",
+    dateFormat: "Y-m-d",
+    locale: "ru",
+    
+    // Ограничиваем выбор дат
+    minDate: "1900-01-01",           // ← можно менять (например 2020-01-01)
+    maxDate: "today",                // не даёт выбрать будущее
+    
+    defaultDate: ["{{ selected_date_from }}", "{{ selected_date_to }}"],
+
+    onChange: function(selectedDates) {
+        const fromInput = document.getElementById("date_from");
+        const toInput   = document.getElementById("date_to");
+
+        if (selectedDates.length === 2) {
+            fromInput.value = selectedDates[0].toISOString().slice(0, 10);
+            toInput.value   = selectedDates[1].toISOString().slice(0, 10);
+        } else {
+            fromInput.value = "";
+            toInput.value   = "";
+        }
+    }
 });
 </script>
 {% endblock %}

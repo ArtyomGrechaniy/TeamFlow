@@ -188,6 +188,14 @@ class ExpenseListView(TeamMemberAccessMixin, ListView):
         if max_value:
             queryset = queryset.filter(amount_rub__lte=max_value)
 
+        date_from = self.request.GET.get("date_from")
+        if date_from:
+            queryset = queryset.filter(date__gte=date_from)
+
+        date_to = self.request.GET.get("date_to")
+        if date_to:
+            queryset = queryset.filter(date__lte=date_to)
+
         return queryset.order_by("-date", "-created_at")
 
     def get_context_data(self, **kwargs):
