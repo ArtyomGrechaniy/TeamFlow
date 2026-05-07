@@ -57,17 +57,21 @@
           </select>
         </div>
         <!-- Категория -->
-        <div class="col-md-3">
-          <label class="form-label">Категория</label>
-          <select name="category" class="form-select">
-            <option value="">Все</option>
-            {% for cat in all_categories %}
-            <option value="{{ cat.id }}" {% if request.GET.category == cat.id|stringformat:"s" %}selected{% endif %}>
-            {{ cat.name }}
-            </option>
-            {% endfor %}
-          </select>
-        </div>
+          <div>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <label class="form-label fw-semibold mb-0">Категории</label>
+              <button type="button"
+                      class="btn btn-sm btn-link p-0"
+                      onclick="toggleAllCategories()">
+                Выбрать все / Снять все
+              </button>
+            </div>
+
+            <div class="row row-cols-2 row-cols-md-3 g-2"
+                 style="max-height: 180px; overflow-y:auto; border:1px solid #dee2e6; border-radius:6px; padding:8px;">
+              {% for cat in all_categories %} <div class="col"> <div class="form-check"> <input class="form-check-input category-checkbox" type="checkbox" name="category" value="{{ cat.id }}" id="cat_{{ cat.id }}" {% if cat.id|stringformat:'s' in selected_categories %}checked{% endif %}> <label class="form-check-label" for="cat_{{ cat.id }}"> <span class="badge" style="background-color: {{ cat.color|default:'#6c757d' }}; color: white">{{ cat.name }}</span> </label> </div> </div> {% endfor %}
+            </div>
+          </div>
         <!-- Исполнитель -->
         {% if current_team %}
         <div class="col-md-2">
@@ -93,13 +97,32 @@
             <label class="form-check-label">Просроченные</label>
           </div>
         </div>
-        <!-- КНОПКА -->
-        <div class="col-md-1">
-          <button type="submit" class="btn btn-primary w-100">OK</button>
-        </div>
-      </form>
-    </div>
+                  <div>
+            <label class="form-label fw-semibold mb-2">Период</label>
+
+            <input type="text"
+                   id="dateRangePicker"
+                   class="form-control"
+                   placeholder="Выберите период">
+
+            <input type="hidden" name="date_from" id="date_from" value="{{ selected_date_from }}">
+            <input type="hidden" name="date_to" id="date_to" value="{{ selected_date_to }}">
+          </div>
+      <!-- кнопки -->
+      <div class="mt-4 text-end">
+        <button type="submit" class="btn btn-primary">
+          Применить фильтры
+        </button>
+
+        <a href="{% url 'tasks:task_list' %}"
+           class="btn btn-outline-secondary ms-2">
+          Сбросить
+        </a>
+      </div>
+
+    </form>
   </div>
+</div>
   <!-- ==================== ТАБЛИЦА ЗАДАЧ ==================== -->
   {% if tasks %}
   <div class="card shadow-sm">
@@ -201,4 +224,30 @@
   </div>
   {% endif %}
 </div>
+<script>
+    flatpickr("#dateRangePicker", {
+      mode: "range",
+      dateFormat: "Y-m-d",
+      locale: "ru",
+      
+      // Ограничиваем выбор дат
+      minDate: "1900-01-01",
+      maxDate: "2100-01-01",
+      
+      defaultDate: ["{{ selected_date_from }}", "{{ selected_date_to }}"],
+  
+      onChange: function(selectedDates) {
+          const fromInput = document.getElementById("date_from");
+          const toInput   = document.getElementById("date_to");
+  
+          if (selectedDates.length === 2) {
+              fromInput.value = selectedDates[0].toISOString().slice(0, 10);
+              toInput.value   = selectedDates[1].toISOString().slice(0, 10);
+          } else {
+              fromInput.value = "";
+              toInput.value   = "";
+          }
+      }
+  });
+</script>
 {% endblock %}

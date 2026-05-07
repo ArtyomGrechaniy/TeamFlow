@@ -55,22 +55,22 @@ class TaskListView(TeamMemberAccessMixin, ListView):
     template_name = "tasks/task_list.html"
     context_object_name = "tasks"
     paginate_by = 20
-
-    def get_queryset(self):
-        """Фильтрует задачи по доступу, параметрам запроса и сортировке."""
+    
+    def get_base_queryset(self):
         user = self.request.user
         team_id = self.kwargs.get("team_id")
-        queryset = Task.objects.all().select_related("category", "team", "assigned_to")
 
         if team_id:
-            # Задачи выбранной команды.
-            queryset = queryset.filter(team_id=team_id)
+            return Task.objects.filter(team_id=team_id)
         else:
-            # Личные задачи и задачи команд пользователя.
             user_teams = TeamMember.objects.filter(user=user).values_list(
                 "team", flat=True
             )
-            queryset = queryset.filter(Q(user=user) | Q(team__in=user_teams))
+            return Task.objects.filter(Q(user=user) | Q(team__in=user_teams))
+
+    def get_queryset(self):
+        """Фильтрует задачи по доступу, параметрам запроса и сортировке."""
+        queryset = self.get_base_queryset().select_related("category", "team")
 
         status = self.request.GET.get("status")
         if status:
@@ -86,9 +86,9 @@ class TaskListView(TeamMemberAccessMixin, ListView):
             except ValueError:
                 pass
 
-        category_id = self.request.GET.get("category")
-        if category_id:
-            queryset = queryset.filter(category_id=category_id)
+        selected_categories = self.request.GET.getlist("category")
+        if selected_categories:
+            queryset = queryset.filter(category_id__in=selected_categories)
 
         assigned_to = self.request.GET.get("assigned_to")
         if assigned_to:
@@ -157,6 +157,8 @@ class TaskListView(TeamMemberAccessMixin, ListView):
             ).distinct()
 
         context["user_teams"] = Team.objects.filter(members__user=user).distinct()
+
+        context["selected_categories"] = self.request.GET.getlist("category")
 
         return context
 
