@@ -175,6 +175,14 @@ class ExpenseListView(TeamMemberAccessMixin, ListView):
 
     def get_queryset(self):
         queryset = self.get_base_queryset().select_related("category", "team")
+        
+        type = self.request.GET.get("type")
+
+        match type:
+            case "personal":
+                queryset = queryset.filter(team=None)
+            case "team":
+                queryset = queryset.filter(user=None)
 
         selected_categories = self.request.GET.getlist("category")
         if selected_categories:
