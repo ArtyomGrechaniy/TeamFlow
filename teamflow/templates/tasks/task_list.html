@@ -28,50 +28,41 @@
       {% endif %}
     </div>
   </div>
-  <!-- ==================== ФИЛЬТРЫ ==================== -->
-  <div class="card shadow-sm mb-4">
-    <div class="card-body">
-      <form method="get" id="filterForm" class="row g-3 align-items-end">
+<!-- ==================== ФИЛЬТРЫ ==================== -->
+<div class="card shadow-sm mb-4">
+  <div class="card-body">
+    <form method="get" id="filterForm">
+
+      <div class="row g-3 align-items-end">
+
         <!-- Статус -->
         <div class="col-md-2">
           <label class="form-label">Статус</label>
           <select name="status" class="form-select">
             <option value="">Все</option>
             {% for code, name in task_status_choices %}
-            <option value="{{ code }}" {% if request.GET.status == code|stringformat:"s" %}selected{% endif %}>
-            {{ name }}
-            </option>
+              <option value="{{ code }}"
+                {% if request.GET.status == code|stringformat:"s" %}selected{% endif %}>
+                {{ name }}
+              </option>
             {% endfor %}
           </select>
         </div>
+
         <!-- Приоритет -->
         <div class="col-md-2">
           <label class="form-label">Приоритет</label>
           <select name="priority" class="form-select">
             <option value="">Все</option>
             {% for code, name in task_priority_choices %}
-            <option value="{{ code }}" {% if request.GET.priority == code|stringformat:"s" %}selected{% endif %}>
-            {{ name }}
-            </option>
+              <option value="{{ code }}"
+                {% if request.GET.priority == code|stringformat:"s" %}selected{% endif %}>
+                {{ name }}
+              </option>
             {% endfor %}
           </select>
         </div>
-        <!-- Категория -->
-          <div>
-            <div class="d-flex justify-content-between align-items-center mb-2">
-              <label class="form-label fw-semibold mb-0">Категории</label>
-              <button type="button"
-                      class="btn btn-sm btn-link p-0"
-                      onclick="toggleAllCategories()">
-                Выбрать все / Снять все
-              </button>
-            </div>
 
-            <div class="row row-cols-2 row-cols-md-3 g-2"
-                 style="max-height: 180px; overflow-y:auto; border:1px solid #dee2e6; border-radius:6px; padding:8px;">
-              {% for cat in all_categories %} <div class="col"> <div class="form-check"> <input class="form-check-input category-checkbox" type="checkbox" name="category" value="{{ cat.id }}" id="cat_{{ cat.id }}" {% if cat.id|stringformat:'s' in selected_categories %}checked{% endif %}> <label class="form-check-label" for="cat_{{ cat.id }}"> <span class="badge" style="background-color: {{ cat.color|default:'#6c757d' }}; color: white">{{ cat.name }}</span> </label> </div> </div> {% endfor %}
-            </div>
-          </div>
         <!-- Исполнитель -->
         {% if current_team %}
         <div class="col-md-2">
@@ -79,43 +70,87 @@
           <select name="assigned_to" class="form-select">
             <option value="">Все</option>
             {% for member in team_members %}
-            <option value="{{ member.id }}" {% if request.GET.assigned_to == member.id|stringformat:"s" %}selected{% endif %}>
-            {{ member.get_full_name|default:member.username }}
-            </option>
+              <option value="{{ member.id }}"
+                {% if request.GET.assigned_to == member.id|stringformat:"s" %}selected{% endif %}>
+                {{ member.get_full_name|default:member.username }}
+              </option>
             {% endfor %}
           </select>
         </div>
         {% endif %}
-        <!-- Только просроченные -->
+
+        <!-- Просроченные -->
         <div class="col-md-2">
-          <div class="form-check mt-4">
+          <div class="form-check">
             <input class="form-check-input"
-            type="checkbox"
-            name="overdue"
-            value="true"
-            {% if request.GET.overdue == "true" %}checked{% endif %}>
+                   type="checkbox"
+                   name="overdue"
+                   value="true"
+                   {% if request.GET.overdue == "true" %}checked{% endif %}>
             <label class="form-check-label">Просроченные</label>
           </div>
         </div>
-                  <div>
-            <label class="form-label fw-semibold mb-2">Период</label>
 
-            <input type="text"
-                   id="dateRangePicker"
-                   class="form-control"
-                   placeholder="Выберите период">
+        <!-- Период -->
+        <div class="col-md-4">
+          <label class="form-label">Период</label>
+          <input type="text"
+                 id="dateRangePicker"
+                 class="form-control"
+                 placeholder="Выберите период">
 
-            <input type="hidden" name="date_from" id="date_from" value="{{ selected_date_from }}">
-            <input type="hidden" name="date_to" id="date_to" value="{{ selected_date_to }}">
+          <input type="hidden" name="date_from" id="date_from" value="{{ selected_date_from }}">
+          <input type="hidden" name="date_to" id="date_to" value="{{ selected_date_to }}">
+        </div>
+
+      </div>
+
+      <!-- Категории -->
+      <div class="mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <label class="form-label fw-semibold mb-0">Категории</label>
+
+          <button type="button"
+                  class="btn btn-sm btn-link p-0"
+                  onclick="toggleAllCategories()">
+            Выбрать все / Снять все
+          </button>
+        </div>
+
+        <div class="row row-cols-2 row-cols-md-4 g-2 p-2 border rounded"
+             style="max-height: 180px; overflow-y:auto;">
+
+          {% for cat in all_categories %}
+          <div class="col">
+            <div class="form-check">
+              <input class="form-check-input category-checkbox"
+                     type="checkbox"
+                     name="category"
+                     value="{{ cat.id }}"
+                     id="cat_{{ cat.id }}"
+                     {% if cat.id|stringformat:'s' in selected_categories %}checked{% endif %}>
+
+              <label class="form-check-label" for="cat_{{ cat.id }}">
+                <span class="badge"
+                      style="background-color: {{ cat.color|default:'#6c757d' }}; color:white;">
+                  {{ cat.name }}
+                </span>
+              </label>
+            </div>
           </div>
+          {% endfor %}
+
+        </div>
+      </div>
+
       <!-- кнопки -->
-      <div class="mt-4 text-end">
+      <div class="mt-4 d-flex justify-content-end gap-2">
         <button type="submit" class="btn btn-primary">
           Применить фильтры
         </button>
 
         <a href="{% url 'tasks:task_list' %}"
-           class="btn btn-outline-secondary ms-2">
+           class="btn btn-outline-secondary">
           Сбросить
         </a>
       </div>
