@@ -36,11 +36,6 @@ class ProfileView(DetailView):
     slug_field = "user__username"
     slug_url_kwarg = "username"
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["is_owner"] = self.request.user == self.object.user
-        return context
-
 
 class ProfileStatisticsView(AccessMixin, TemplateView):
     """Отображает статистику пользователя с учётом приватности."""
