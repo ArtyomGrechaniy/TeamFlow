@@ -245,7 +245,7 @@ class TeamMemberListView(TeamMemberAccessMixin, DetailView):
             context["is_owner"] = False
             context["is_admin"] = False
 
-        context["members"] = TeamMember.objects.filter(team=team).select_related("user")
+        context["members"] = TeamMember.objects.filter(team=team).select_related("user", "user__profile")
 
         return context
 
