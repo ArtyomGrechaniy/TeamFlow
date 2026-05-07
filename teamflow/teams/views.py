@@ -97,7 +97,12 @@ class TeamListView(LoginRequiredMixin, ListView):
 
         user = self.request.user
         return (
-            Team.objects.filter(members__user=user).distinct().order_by("-created_at")
+            Team.objects.
+            filter(members__user=user)
+            .select_related("owner")
+            .prefetch_related("members", "members__user")
+            .distinct()
+            .order_by("-created_at")
         )
 
 
