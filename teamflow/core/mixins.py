@@ -2,6 +2,7 @@ from django.contrib.auth.mixins import (
     LoginRequiredMixin,
     UserPassesTestMixin,
 )
+from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from django.urls import reverse_lazy
 
@@ -61,6 +62,9 @@ class TeamAccessMixin(LoginRequiredMixin, UserPassesTestMixin):
 
         if roles:
             qs = qs.filter(role__in=roles)
+        
+        else:
+            raise PermissionDenied
 
         return qs.exists()
 
@@ -72,12 +76,10 @@ class TeamAccessMixin(LoginRequiredMixin, UserPassesTestMixin):
         else:
             return True
 
-    def handle_no_permission(self):
-        raise Http404()
 
 
 class TeamMemberAccessMixin(TeamAccessMixin):
-    pass
+    required_roles = ["member", "admin", "owner"]
 
 
 class TeamAdminAccessMixin(TeamAccessMixin):
