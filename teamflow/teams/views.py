@@ -1,5 +1,7 @@
 from datetime import timedelta
 
+from core.mixins import (FormContextMixin, TeamAdminAccessMixin,
+                         TeamMemberAccessMixin, TeamOwnerAccessMixin)
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -8,20 +10,8 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse_lazy
 from django.utils import timezone
 from django.views import View
-from django.views.generic import (
-    CreateView,
-    DeleteView,
-    DetailView,
-    ListView,
-    UpdateView,
-)
-
-from core.mixins import (
-    TeamMemberAccessMixin,
-    FormContextMixin,
-    TeamOwnerAccessMixin,
-    TeamAdminAccessMixin
-)
+from django.views.generic import (CreateView, DeleteView, DetailView, ListView,
+                                  UpdateView)
 from tasks.models import Task
 
 from .forms import TeamForm
@@ -121,9 +111,6 @@ class TeamCreateView(LoginRequiredMixin, FormContextMixin, CreateView):
         form.instance.owner = self.request.user
         response = super().form_valid(form)
 
-        TeamMember.objects.create(
-            team=self.object, user=self.request.user, role="owner"
-        )
         return response
 
 
