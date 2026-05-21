@@ -1,7 +1,9 @@
 from django.db.models import Q
 from rest_framework import viewsets
+from rest_framework.views import APIView
+from rest_framework.response import Response
 
-from teams.models import Team
+from teams.models import Team, TeamMember
 
 from .permissions import IsTeamOwner
 from .serializers import (
@@ -33,3 +35,24 @@ class TeamViewSet(viewsets.ModelViewSet):
             .distinct()
             .prefetch_related("members__user")
         )
+    
+
+class JoinTeamAPIView(APIView):
+    def post(self, request):
+        code = request.data.get("invite_code")
+
+        try:
+            team = Team.objects.get(invite_code=code)
+        except Team.DoesNotExist:
+            return Response({"detail": "Invalid code"}, status=400)
+        
+        if TeamMember.objects.filter(team=team, user=request.user).exists():
+            return Response({"detail": "Already in team"}, status=400)
+
+        TeamMember.objects.get_or_create(
+            team=team,
+            user=request.user,
+            role="member"
+        )
+
+        return Response({"detail": "Joined team"})

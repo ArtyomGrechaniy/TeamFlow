@@ -2,6 +2,7 @@ from django.urls import include, path
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from api.v1.teams.views import JoinTeamAPIView
 
 class CustomAPIRoot(APIView):
     """
@@ -23,6 +24,7 @@ class CustomAPIRoot(APIView):
 
 
 urlpatterns = [
+    path("teams/join/", JoinTeamAPIView.as_view()),
     path("", CustomAPIRoot.as_view(), name="api-root"),
     path("", include("api.v1.teams.urls")),
     path("", include("api.v1.tasks.urls")),
