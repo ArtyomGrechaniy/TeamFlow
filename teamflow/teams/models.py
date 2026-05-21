@@ -3,6 +3,8 @@ import string
 
 from django.contrib.auth import get_user_model
 from django.db import models
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 User = get_user_model()
 
@@ -81,3 +83,14 @@ class TeamMember(models.Model):
         """Показывает участника и команду в админке и отладке."""
 
         return f"{self.user.username} в {self.team.name}"
+
+
+@receiver(post_save, sender=Team)
+def create_owner_team_member(sender, instance, created, **kwargs):
+    """Автоматически создаёт TeamMember с ролью 'owner' при создании команды."""
+    if created:
+        TeamMember.objects.get_or_create(
+            team=instance,
+            user=instance.owner,
+            defaults={"role": "owner"}
+        )
